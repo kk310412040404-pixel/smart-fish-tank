@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <link rel="stylesheet" href="style_admin.css"> 
+</head>
+<body class="theme-default">
+
+  <div class="sidebar">
+    <h2>Admin Panel</h2>
+    <ul>
+      <li class="active" onclick="showPage('home')"><i class="fas fa-home"></i> Trang chủ</li>
+      <li onclick="showPage('profile')"><i class="fas fa-users"></i> Hồ sơ người dùng</li>
+      <li onclick="showPage('settings')"><i class="fas fa-cog"></i> Cài đặt</li>
+    </ul>
+    <div class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</div>
+  </div>
+
+  <div class="main">
+    
+    <section id="home" class="page active">
+      <div class="header-bar"><h3>Danh sách người dùng</h3></div>
+      <div class="grid" id="userGrid"></div>
+    </section>
+
+    <section id="profile" class="page">
+      <h3>Hồ sơ người dùng</h3>
+      
+      <div class="card table-card">
+        <table id="userTable">
+          <thead>
+            <tr>
+              <th style="width: 50px;">STT</th>
+              <th>Tên hiển thị</th>
+              <th>Vai trò</th>
+              <th>Tên đăng nhập</th>
+              <th>Gmail</th>
+              <th>Mật khẩu</th>
+              <th>Ngày đăng ký</th>
+              <th>Trạng thái</th>
+              <th style="width: 180px;">Quyền hạn</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="settings" class="page">
+      <h3>Cài đặt hệ thống</h3>
+      <div class="settings-container">
+        <div class="card settings-left">
+            <div class="avatar-section"><div class="avatar-circle-lg">Admin</div></div>
+
+            <div class="form-group">
+                <label>Tên hiển thị</label>
+                <input type="text" id="st_fullname" placeholder="Đang tải..." onblur="updateAdminInfo()">
+            </div>
+            <div class="form-group"><label>Vai trò</label><input type="text" id="st_role" readonly></div>
+            <div class="form-group"><label>Username</label><input type="text" id="st_username" readonly></div>
+            <div class="form-group"><label>Email</label><input type="text" id="st_email" readonly></div>
+            <div class="form-group"><label>Số điện thoại</label><input type="text" id="st_phone" readonly placeholder="(Chưa có)"></div>
+            <div class="form-group"><label>Ngày tham gia</label><input type="text" id="st_created" readonly></div>
+        </div>
+
+        <div class="card settings-right">
+            <h4 class="st-title">Nâng cao</h4>
+            <div class="st-section">
+                <label class="st-label">Giao diện</label>
+                <div class="theme-options">
+                    <div class="theme-box t-default selected" onclick="changeTheme('default', this)"></div>
+                    <div class="theme-box t-ocean" onclick="changeTheme('ocean', this)"></div>
+                    <div class="theme-box t-forest" onclick="changeTheme('forest', this)"></div>
+                    <div class="theme-box t-light" onclick="changeTheme('light', this)"></div>
+                </div>
+            </div>
+
+            <div class="st-section">
+                <label class="st-label">Bảo mật</label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="sec" id="sec_normal" value="normal" checked onclick="handleSecurityClick('normal')"> 
+                        Mặc định
+                    </label>
+                    <label>
+                        <input type="radio" name="sec" id="sec_advanced" value="advanced" onclick="handleSecurityClick('advanced')"> 
+                        Nâng cao
+                    </label>
+                </div>
+                <p id="sec_hint" style="font-size:12px; color:#aaa; margin-top:5px">Chế độ cơ bản.</p>
+            </div>
+
+            <hr class="st-divider">
+            <div class="action-buttons">
+                <button class="btn-action warning" onclick="openModal('repass')">Đổi Mật khẩu</button>
+                <button class="btn-action warning" onclick="openModal('rephone')">Cập nhật Số điện thoại</button>
+            </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="configModal" class="modal">
+    <div class="modal-content">
+      <h3>Cấu hình: <span id="cfg_target_user" style="color:#a855f7">User</span></h3>
+      <div class="widget-list">
+        <label><input type="checkbox" id="w_water"> 1. Chất lượng nước</label>
+        <label><input type="checkbox" id="w_control"> 2. Điều khiển</label>
+        <label><input type="checkbox" id="w_feeder"> 3. Cho ăn</label>
+        <label><input type="checkbox" id="w_camera"> 4. Camera</label>
+      </div>
+      <div class="modal-buttons">
+        <button class="btn-cancel" onclick="closeModal('configModal')">Đóng</button>
+        <button class="btn-save" onclick="saveUserInterface()">Lưu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="rephoneModal" class="modal">
+      <div class="modal-content sm">
+        <div class="modal-header-icon"><i class="fas fa-shield-alt"></i></div>
+        <h3 style="text-align:center; margin-bottom: 10px;">Bảo mật tài khoản</h3>
+        <p class="modal-desc">Nhập số điện thoại mới và mật khẩu để xác nhận.</p>
+
+        <div class="phone-input-group" style="margin-bottom: 15px;">
+            <div class="phone-prefix"><i class="fas fa-flag"></i> +84</div>
+            <input type="text" id="new_phone" placeholder="Nhập số điện thoại..." maxlength="10">
+        </div>
+
+        <div class="form-group">
+            <label style="font-size:12px; color:#94a3b8; margin-bottom:5px;">Xác nhận mật khẩu</label>
+            <input type="password" id="confirm_pass_for_phone" placeholder="Nhập mật khẩu hiện tại...">
+        </div>
+
+        <div class="modal-buttons" style="justify-content: center; margin-top: 20px;">
+          <button class="btn-cancel" onclick="closeModal('rephoneModal'); forceDefaultSecurity();" style="width:100px">Hủy</button>
+          <button class="btn-save" onclick="savePhoneNumber()" style="width:100px">Lưu</button>
+        </div>
+      </div>
+  </div>
+  
+  <div id="repassModal" class="modal">
+    <div class="modal-content sm">
+      
+      <div class="modal-header-icon"><i class="fas fa-key"></i></div>
+      
+      <h3 style="text-align:center; margin-bottom:5px;">Đổi Mật Khẩu</h3>
+      <p class="modal-desc" style="margin-bottom:20px;">
+          Nhập mã OTP gửi về Email để xác nhận.
+      </p>
+
+      <div class="form-group" style="margin-bottom: 5px;">
+          <label style="font-size:12px; color:#94a3b8; margin-bottom:5px; display:block;">1. Xác thực OTP</label>
+          <div style="display: flex; gap: 10px;">
+              <input type="text" id="pass_otp" placeholder="Nhập 6 số OTP" maxlength="6" 
+                     style="text-align:center; letter-spacing:3px; font-weight:bold; font-size:18px;">
+              
+              <button id="btnGetPassOTP" onclick="sendPasswordOTP()" 
+                      style="width: 110px; font-size: 13px; background: #334155; white-space: nowrap; transition:0.3s">
+                  Lấy mã
+              </button>
+          </div>
+          <small id="otp_msg" style="display:block; text-align:right; font-size:12px; height:15px; margin-top:5px;"></small>
+      </div>
+
+      <div class="form-group">
+          <label style="font-size:12px; color:#94a3b8; margin-bottom:5px; display:block;">2. Mật khẩu mới</label>
+          <input type="password" id="new_pass" placeholder="Nhập mật khẩu mới...">
+      </div>
+      
+      <div class="form-group">
+          <input type="password" id="confirm_new_pass" placeholder="Nhập lại mật khẩu mới...">
+      </div>
+
+      <div class="modal-buttons" style="justify-content: center; margin-top: 25px;">
+        <button class="btn-cancel" onclick="closeModal('repassModal')" style="width:100px">Hủy</button>
+        <button class="btn-save" onclick="doChangePassword()" style="width:100px">Lưu</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="script_admin.js"></script>
+</body>
+</html>

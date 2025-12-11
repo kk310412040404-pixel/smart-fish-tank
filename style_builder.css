@@ -1,0 +1,157 @@
+/* style_builder.css - BẢN FIX LỖI LAYOUT */
+
+/* 1. Reset lại Body để phù hợp với trang Builder (có Header) */
+body {
+    display: block !important; /* Ghi đè display:flex của style_user.css */
+    overflow: hidden; /* Không cho cuộn trang chính */
+    background-color: #0f172a;
+}
+
+/* 2. Header (Thanh công cụ trên cùng) */
+.builder-header {
+    height: 60px;
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    position: fixed;
+    top: 0; left: 0; width: 100%;
+    z-index: 50;
+    box-sizing: border-box;
+}
+
+.user-badge {
+    background: #334155;
+    color: #a855f7;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 13px;
+    border: 1px solid #a855f7;
+}
+
+.builder-actions button {
+    margin-left: 10px;
+    padding: 8px 15px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    display: inline-flex; align-items: center; gap: 5px;
+}
+.btn-tool { background: #3b82f6; }
+.btn-tool:hover { background: #2563eb; }
+.btn-save { background: #a855f7; }
+.btn-save:hover { background: #9333ea; }
+
+/* 3. Khu vực làm việc chính (Sidebar + Grid) */
+.main-canvas {
+    display: flex;
+    margin-top: 60px; /* Chừa chỗ cho Header */
+    height: calc(100vh - 60px); /* Chiều cao còn lại */
+    width: 100%;
+}
+
+/* Sidebar giả lập (Để Admin căn chỉnh đúng tỷ lệ) */
+.disabled-sidebar {
+    width: 260px;
+    background: #1e293b;
+    border-right: 1px solid #334155;
+    opacity: 0.6; /* Mờ đi chút để biết là không bấm được */
+    pointer-events: none; /* Không cho click */
+    flex-shrink: 0;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Vùng nội dung chứa lưới */
+.content-area {
+    flex: 1; /* Chiếm hết phần còn lại */
+    padding: 20px;
+    overflow-y: auto; /* Cho phép cuộn dọc */
+    background-color: #0f172a;
+    background-image: radial-gradient(#334155 1px, transparent 1px);
+    background-size: 20px 20px; /* Lưới chấm bi giúp căn chỉnh */
+}
+
+/* 4. TÙY BIẾN GRIDSTACK (Để giống Card thật) */
+.grid-stack {
+    background: rgba(255, 255, 255, 0.02); /* Nền mờ nhẹ để phân biệt vùng thả */
+    min-height: 80vh; /* QUAN TRỌNG: Phải có chiều cao tối thiểu thì mới thả widget vào được */
+    border-radius: 12px;
+    border: 2px dashed #334155; /* Viền nét đứt để người dùng biết đây là vùng thả */
+    margin-top: 10px;
+}
+
+.grid-stack-item-content {
+    background: #1e293b !important; /* Màu nền Card giống User */
+    border-radius: 12px;
+    border: 1px solid #334155;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    /* Flex để căn giữa nội dung demo */
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    cursor: move; /* Con trỏ di chuyển */
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hiệu ứng khi đang kéo thả */
+.grid-stack-item.ui-draggable-dragging .grid-stack-item-content,
+.grid-stack-item.ui-resizable-resizing .grid-stack-item-content {
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    border-color: #a855f7; /* Viền tím khi kéo */
+    opacity: 0.9;
+}
+
+/* Nút xóa trên mỗi Widget */
+.delete-widget-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: 0.2s;
+}
+.delete-widget-btn:hover { background: #ef4444; color: white; }
+
+/* 5. DRAWER (Ngăn kéo bên phải) */
+.drawer {
+    position: fixed;
+    top: 60px;
+    right: -320px; /* Ẩn */
+    width: 300px;
+    height: calc(100vh - 60px);
+    background: #1e293b;
+    border-left: 1px solid #334155;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 200;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column;
+}
+.drawer.open { right: 0; } /* Hiện */
+
+.drawer-header { padding: 15px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; color: white; }
+.drawer-body { padding: 15px; overflow-y: auto; }
+
+.widget-item {
+    background: #334155; padding: 12px; border-radius: 8px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+    border: 1px solid #475569; color: #e2e8f0; transition: 0.2s;
+}
+.widget-item:hover { border-color: #a855f7; background: #475569; transform: translateX(-5px); }

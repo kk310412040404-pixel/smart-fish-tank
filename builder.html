@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>Thiết kế Giao diện</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  
+  <link rel="stylesheet" href="style_user.css"> 
+  <link rel="stylesheet" href="style_builder.css">
+
+  <link href="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack-all.js"></script>
+</head>
+<body class="theme-default">
+
+  <div class="builder-header">
+      <div style="display:flex; align-items:center; gap:10px;">
+          <h3 style="margin:0; color:white;">Thiết kế Dashboard</h3>
+          <span class="user-badge" id="targetUserName">User...</span>
+      </div>
+      <div class="builder-actions">
+          <button class="btn-tool" onclick="toggleDrawer()"><i class="fas fa-plus"></i> Thêm Widget</button>
+          <button class="btn-save" onclick="saveDashboard()"><i class="fas fa-save"></i> Lưu</button>
+      </div>
+  </div>
+
+  <div class="main-canvas">
+      <div class="disabled-sidebar">
+        <h2 style="color:#a855f7; text-align:center; margin-bottom:20px; font-weight:bold; font-size:24px;">Smart Tank</h2>
+        <ul style="list-style:none; padding:0;">
+          <li style="padding:12px; margin:5px 0; background:#a855f7; color:white; border-radius:6px; display:flex; gap:10px; align-items:center;">
+              <i class="fas fa-chart-line"></i> Giám sát
+          </li>
+          <li style="padding:12px; margin:5px 0; color:#fff; opacity:0.5; display:flex; gap:10px; align-items:center;">
+              <i class="fas fa-toggle-on"></i> Điều khiển
+          </li>
+        </ul>
+      </div>
+
+      <div class="content-area">
+          <div class="grid-stack"></div>
+      </div>
+  </div>
+
+  <div id="widgetDrawer" class="drawer">
+      <div class="drawer-header"><h3>Thư viện Widget</h3><i class="fas fa-times close-drawer" onclick="toggleDrawer()"></i></div>
+      <div class="drawer-body">
+          <div class="widget-item" onclick="addWidgetToGrid('temp')">
+              <i class="fas fa-thermometer-half" style="color:#f87171"></i> <div><b>Nhiệt độ</b><br><small>Biểu đồ</small></div>
+          </div>
+          <div class="widget-item" onclick="addWidgetToGrid('switch')">
+              <i class="fas fa-toggle-on" style="color:#4ade80"></i> <div><b>Công tắc</b><br><small>Nút bấm</small></div>
+          </div>
+          <div class="widget-item" onclick="addWidgetToGrid('camera')">
+              <i class="fas fa-video" style="color:#60a5fa"></i> <div><b>Camera</b><br><small>Video</small></div>
+          </div>
+      </div>
+  </div>
+
+  <script src="script_builder.js"></script>
+</body>
+</html>

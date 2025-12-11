@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>Bảo Mật 2 Lớp - Bể Cá</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .box { background: #1e293b; padding: 40px; border-radius: 16px; width: 350px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid #334155; }
+    h3 { color: #a855f7; text-align: center; margin-top: 0; font-size: 26px; }
+    input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 8px; border: 1px solid #475569; background: #334155; color: #fff; box-sizing: border-box; outline: none; }
+    input:focus { border-color: #a855f7; background: #1e293b; }
+    button { width: 100%; padding: 14px; margin-top: 20px; border: none; border-radius: 8px; background: #a855f7; color: white; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+    button:hover { background: #9333ea; }
+    .toggle { text-align: center; margin-top: 20px; color: #94a3b8; cursor: pointer; font-size: 14px; }
+    .toggle:hover { color: #fff; text-decoration: underline; }
+    #msg { text-align: center; margin-top: 15px; min-height: 20px; font-size: 14px; }
+    .hidden { display: none; }
+    .otp-input { text-align: center; letter-spacing: 10px; font-size: 24px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h3 id="title">Đăng Nhập An Toàn</h3>
+  
+  <div id="step1">
+      <input id="email" type="email" placeholder="Nhập Gmail của bạn" />
+      <input id="username" type="text" placeholder="Tên hiển thị (Username)" class="hidden" />
+      <input id="password" type="password" placeholder="Mật khẩu" />
+      <input id="re-password" type="password" placeholder="Nhập lại mật khẩu" class="hidden" />
+      <button id="btnAction" onclick="handleStep1()">ĐĂNG NHẬP</button>
+      <div class="toggle" onclick="toggleMode()"><span id="toggleText">Chưa có tài khoản? Đăng ký ngay</span></div>
+  </div>
+
+  <div id="step2" class="hidden">
+      <p style="text-align:center; color:#cbd5e1; font-size:14px;">Mã xác thực đã gửi đến:<br><b id="show-email" style="color:#e879f9">...</b></p>
+      <input id="otp" type="text" maxlength="6" class="otp-input" placeholder="######" />
+      <button onclick="handleVerify()">XÁC NHẬN</button>
+      <div class="toggle" onclick="back()">Quay lại</div>
+  </div>
+  <p id="msg"></p>
+</div>
+
+<script>
+  // --- CẤU HÌNH API (Sửa link này) ---
+  const API_URL = "http://127.0.0.1:8000";
+  // -----------------------------------
+
+  let isRegister = false;
+  let currentEmail = "";
+
+  function toggleMode() {
+    isRegister = !isRegister;
+    document.getElementById('msg').innerText = "";
+    document.getElementById('username').classList.toggle('hidden');
+    document.getElementById('re-password').classList.toggle('hidden');
+    const title = document.getElementById('title');
+    const btn = document.getElementById('btnAction');
+    const txt = document.getElementById('toggleText');
+    if (isRegister) { title.innerText = "Đăng Ký Tài Khoản"; btn.innerText = "TIẾP TỤC"; txt.innerText = "Đã có tài khoản? Đăng nhập"; } 
+    else { title.innerText = "Đăng Nhập An Toàn"; btn.innerText = "ĐĂNG NHẬP"; txt.innerText = "Chưa có tài khoản? Đăng ký ngay"; }
+  }
+
+  async function handleStep1() {
+      const email = document.getElementById('email').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      const user = document.getElementById('username').value.trim();
+      const rePass = document.getElementById('re-password').value.trim();
+      const msg = document.getElementById('msg');
+
+      if (!email || !pass) { msg.innerText = "Vui lòng nhập đủ thông tin"; msg.style.color = "red"; return; }
+      msg.innerText = "Đang xử lý..."; msg.style.color = "white";
+
+      try {
+          // Đã sửa lại dùng API_URL
+          let url = isRegister ? `${API_URL}/api/register` : `${API_URL}/api/login/step1`;
+          let payload = isRegister ? { username: user, password: pass, email: email } : { email: email, password: pass };
+          if (isRegister && pass !== rePass) { msg.innerText = "Mật khẩu không khớp"; msg.style.color = "red"; return; }
+
+          const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+          const data = await res.json();
+
+          if (res.ok) {
+              currentEmail = email;
+              document.getElementById('step1').classList.add('hidden');
+              document.getElementById('step2').classList.remove('hidden');
+              document.getElementById('show-email').innerText = email;
+              document.getElementById('title').innerText = "Nhập Mã Xác Thực";
+              msg.innerText = "";
+          } else { msg.innerText = data.detail || "Có lỗi xảy ra"; msg.style.color = "#ef4444"; }
+      } catch (err) { 
+          console.error(err);
+          msg.innerText = "Lỗi kết nối Server"; msg.style.color = "#ef4444"; 
+      }
+  }
+
+  async function handleVerify() {
+      const otp = document.getElementById('otp').value.trim();
+      const msg = document.getElementById('msg');
+      if (!otp) return;
+      msg.innerText = "Đang xác thực...";
+
+      try {
+          // Đã sửa lại dùng API_URL
+          const res = await fetch(`${API_URL}/api/verify-otp`, {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: currentEmail, otp_code: otp })
+          });
+          const data = await res.json();
+
+          if (res.ok) {
+              localStorage.setItem('accessToken', data.access_token);
+              localStorage.setItem('userRole', data.role);
+              localStorage.setItem('userConfig', data.ui_config);
+              
+              localStorage.setItem('currentUsername', data.username);
+
+              msg.innerText = "Thành công! Đang chuyển hướng..."; msg.style.color = "#4ade80";
+              setTimeout(() => { window.location.href = (data.role === 'admin') ? "admin.html" : "user.html"; }, 1000);
+          } else { msg.innerText = data.detail || "Mã OTP sai"; msg.style.color = "#ef4444"; }
+      } catch (err) { msg.innerText = "Lỗi kết nối"; }
+  }
+
+  function back() {
+      document.getElementById('step1').classList.remove('hidden');
+      document.getElementById('step2').classList.add('hidden');
+      document.getElementById('title').innerText = isRegister ? "Đăng Ký Tài Khoản" : "Đăng Nhập An Toàn";
+      document.getElementById('msg').innerText = "";
+  }
+</script>
+</body>
+</html>
