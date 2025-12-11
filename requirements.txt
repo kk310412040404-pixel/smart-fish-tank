@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlmodel
+pydantic
+email-validator
+fastapi-mail
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+psycopg2-binary
+python-dotenv
+
+#uvicorn main:app --reload
