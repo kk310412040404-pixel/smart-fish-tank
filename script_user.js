@@ -416,3 +416,4 @@ function toggleDevice(id, btn) {
     }
 
 }
+
