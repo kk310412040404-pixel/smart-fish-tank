@@ -7,7 +7,7 @@ from typing import List, Optional, Dict, Any
 
 from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import select, Session
+from sqlmodel import select, Session, SQLModel
 from pydantic import BaseModel, EmailStr
 from fastapi.security import OAuth2PasswordBearer 
 from jose import jwt, JWTError
@@ -21,10 +21,10 @@ from auth import (
     ALGORITHM    
 )
 from database import init_db, engine
-from models import User, OTP, Base
+from models import User, OTP
 
 # Khởi tạo bảng trong database
-Base.metadata.create_all(bind=engine)
+SQLModel.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
