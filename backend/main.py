@@ -49,7 +49,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 # --- CẤU HÌNH GMAIL (Điền lại thông tin của bạn) ---
 conf = ConnectionConfig(
     MAIL_USERNAME="ngytunkhoa311204n@gmail.com", # Email đăng ký Brevo
-    MAIL_PASSWORD="xsmtpsib-0cc5f6ead11df511dcbcd12a6b6c8b0f258bd7ea95771bc1d43c9fe8911241d5-4vPfETdEtsHvaKXs",     # Mật khẩu SMTP của Brevo (Master Password)
+    MAIL_PASSWORD="xsmtpsib-0cc5f6ead11df511dcbcd12a6b6c8b0f258bd7ea95771bc1d43c9fe8911241d5-wYhOoRAGCInoLqz3",     # Mật khẩu SMTP của Brevo (Master Password)
     MAIL_FROM="kk310412040404@gmail.com",                  # Email người gửi (Vẫn là mail bạn)
     MAIL_PORT=587,
     MAIL_SERVER="smtp-relay.brevo.com",                    # Server của Brevo
