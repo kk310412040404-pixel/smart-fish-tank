@@ -6,7 +6,7 @@ if (!token) {
     window.location.href = "index.html";
 }
 
-const API_URL = "http://127.0.0.1:8000/api";
+const API_URL = "https://smart-fish-tank.onrender.com/api";
 let myUserInfo = null;     
 let myCurrentConfig = {};  
 
@@ -414,4 +414,5 @@ function toggleDevice(id, btn) {
         btn.style.color = "#ef4444"; // Đỏ
         showToast("Đã Tắt thiết bị", "success");
     }
+
 }
