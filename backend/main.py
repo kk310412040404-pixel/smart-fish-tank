@@ -94,8 +94,8 @@ def register(user: UserCreate, background_tasks: BackgroundTasks):
         
         return {"message": "Đăng ký thành công. Vui lòng kiểm tra email lấy OTP (Demo: Check Database)", "username": new_user.username}
 
-@app.post("/api/login")
-def login(user_data: UserLogin):
+@app.post("/api/login/step1")
+def login_step1(user_data: UserLogin):
     with Session(engine) as session:
         user = session.exec(select(User).where(User.username == user_data.username)).first()
         if not user or not verify_password(user_data.password, user.hashed_password):
