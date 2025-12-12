@@ -3,7 +3,7 @@
 const urlParams = new URLSearchParams(window.location.search);
 const targetUserId = urlParams.get('uid');
 const token = localStorage.getItem('accessToken');
-const API_URL = "http://127.0.0.1:8000/api";
+const API_URL = "https://smart-fish-tank.onrender.com/api";
 
 let grid = null; // Biến giữ lưới
 
@@ -157,4 +157,5 @@ async function saveDashboard() {
 
 function toggleDrawer() {
     document.getElementById('widgetDrawer').classList.toggle('open');
+
 }
