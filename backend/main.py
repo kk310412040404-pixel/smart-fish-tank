@@ -49,7 +49,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 # --- CẤU HÌNH GMAIL (Điền lại thông tin của bạn) ---
 conf = ConnectionConfig(
     MAIL_USERNAME="kk310412040404@gmail.com",
-    MAIL_PASSWORD="zemh jdtf jcfz tvvo",
+    MAIL_PASSWORD="zemhjdtfjcfztvvo",
     MAIL_FROM="kk310412040404@gmail.com",
     MAIL_PORT=587,
     MAIL_SERVER="smtp.gmail.com",
@@ -131,7 +131,7 @@ async def register(user_data: UserRegister, background_tasks: BackgroundTasks):
                 raise HTTPException(status_code=400, detail="Username hoặc Email đã tồn tại")
             else:
                 # Nếu User tồn tại nhưng chưa kích hoạt -> Xóa OTP cũ & User cũ để tạo lại
-                otp_old = session.get(OTP, existing_user.email)
+                otp_old = session.exec(select(OTP).where(OTP.email == existing_user.email)).first()
                 if otp_old: session.delete(otp_old)
                 session.delete(existing_user)
                 session.commit()
@@ -185,7 +185,7 @@ async def login_step1(data: LoginStep1, background_tasks: BackgroundTasks):
         otp_code = str(random.randint(100000, 999999))
         
         # Xóa OTP cũ nếu có
-        old_otp = session.get(OTP, user.email)
+        old_otp = session.exec(select(OTP).where(OTP.email == user.email)).first()
         if old_otp: session.delete(old_otp)
             
         session.add(OTP(email=user.email, code=otp_code, expires_at=datetime.utcnow() + timedelta(minutes=5)))
@@ -206,7 +206,7 @@ async def login_step1(data: LoginStep1, background_tasks: BackgroundTasks):
 @app.post("/api/verify-otp")
 def verify_otp_and_get_token(data: VerifyOTP):
     with Session(engine) as session:
-        otp = session.get(OTP, data.email)
+        otp = session.exec(select(OTP).where(OTP.email == data.email)).first()
         if not otp or otp.code != data.otp_code:
             raise HTTPException(status_code=400, detail="OTP sai")
         if datetime.utcnow() > otp.expires_at:
@@ -272,7 +272,7 @@ async def request_password_otp(user_id: int, background_tasks: BackgroundTasks):
         otp_code = str(random.randint(100000, 999999))
         
         # Xóa OTP cũ nếu có để tránh rác DB
-        existing_otp = session.get(OTP, user.email)
+        existing_otp = session.exec(select(OTP).where(OTP.email == user.email)).first()
         if existing_otp: session.delete(existing_otp)
         
         # Lưu OTP mới (Hết hạn sau 5 phút)
@@ -308,7 +308,7 @@ def change_password(user_id: int, data: ChangePasswordRequest):
             raise HTTPException(status_code=404, detail="User not found")
         
         # 1. Kiểm tra OTP
-        otp_record = session.get(OTP, user.email)
+        otp_record = session.exec(select(OTP).where(OTP.email == user.email)).first()
         if not otp_record:
              raise HTTPException(status_code=400, detail="Vui lòng lấy mã OTP trước")
         
@@ -341,7 +341,7 @@ def delete_user(user_id: int):
              raise HTTPException(status_code=400, detail="Không thể xóa Admin")
              
         # Xóa OTP liên quan trước
-        otp = session.get(OTP, user.email)
+        otp = session.exec(select(OTP).where(OTP.email == user.email)).first()
         if otp: session.delete(otp)
         
         session.delete(user)
