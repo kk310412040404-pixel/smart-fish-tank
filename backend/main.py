@@ -50,14 +50,14 @@ mail_pass = os.getenv("MAIL_PASSWORD")
 # --- CẤU HÌNH GMAIL (Điền lại thông tin của bạn) ---
 conf = ConnectionConfig(
     MAIL_USERNAME="ngytunkhoa311204n@gmail.com", # Email đăng ký Brevo
-    MAIL_PASSWORD= mail_pass,     # Mật khẩu SMTP của Brevo (Master Password)
+    MAIL_PASSWORD=mail_pass,     # Mật khẩu SMTP của Brevo (Master Password)
     MAIL_FROM="kk310412040404@gmail.com",                  # Email người gửi (Vẫn là mail bạn)
-    MAIL_PORT=587,
+    MAIL_PORT=465,
     MAIL_SERVER="smtp-relay.brevo.com",                    # Server của Brevo
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
+    MAIL_STARTTLS=False,
+    MAIL_SSL_TLS=True,
     USE_CREDENTIALS=True,
-    VALIDATE_CERTS=False
+    VALIDATE_CERTS=True
 )
 
 ## --- MODELS REQUEST ---
