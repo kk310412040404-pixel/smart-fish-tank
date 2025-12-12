@@ -9,5 +9,6 @@ passlib[bcrypt]
 python-multipart
 psycopg2-binary
 python-dotenv
+bcrypt
 
 #uvicorn main:app --reload
