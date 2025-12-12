@@ -9,7 +9,7 @@ if (!token || role !== 'admin') {
     window.location.href = "index.html";
 }
 
-const API_URL = "http://127.0.0.1:8000/api";
+const API_URL = "https://smart-fish-tank.onrender.com/api";
 let allUsers = [];
 let editingUserId = null;
 let myUserId = null;
@@ -604,4 +604,5 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.remove();
     }, 3000);
+
 }
