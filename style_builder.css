@@ -35,15 +35,28 @@ body {
 }
 
 .builder-actions button {
-    margin-left: 10px;
-    padding: 8px 15px;
-    border-radius: 6px;
+display: inline-flex;       /* Để icon và chữ căn giữa đẹp hơn */
+    align-items: center;
+    justify-content: center;
+    gap: 8px;                   /* Khoảng cách giữa Icon và Chữ */
+    
+    height: 40px;               /* Chiều cao cố định cho đều nhau */
+    min-width: 130px;           /* QUAN TRỌNG: Độ rộng tối thiểu để 2 nút to bằng nhau */
+    padding: 0 20px;
+    
     border: none;
-    cursor: pointer;
-    color: white;
+    border-radius: 8px;         /* Bo góc mềm mại hơn */
+    font-family: 'Segoe UI', sans-serif;
     font-weight: 600;
-    font-size: 13px;
-    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 14px;
+    color: white;
+    cursor: pointer;
+    
+    /* Hiệu ứng mượt mà & Bóng đổ */
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
 }
 .btn-tool { background: #3b82f6; }
 .btn-tool:hover { background: #2563eb; }
@@ -200,3 +213,4 @@ body {
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .btn-cancel { background: transparent; border: 1px solid #475569; color: #cbd5e1; padding: 6px 15px; border-radius: 6px; cursor: pointer; }
 .btn-save-modal { background: #a855f7; border: none; color: white; padding: 6px 15px; border-radius: 6px; cursor: pointer; }
+
