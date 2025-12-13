@@ -1,5 +1,3 @@
-/* style_builder.css - BẢN FIX LỖI LAYOUT */
-
 /* 1. Reset lại Body để phù hợp với trang Builder (có Header) */
 body {
     display: block !important; /* Ghi đè display:flex của style_user.css */
@@ -155,3 +153,46 @@ body {
     border: 1px solid #475569; color: #e2e8f0; transition: 0.2s;
 }
 .widget-item:hover { border-color: #a855f7; background: #475569; transform: translateX(-5px); }
+
+/* Nút Cấu hình (Bánh răng) - Thêm vào chỗ css của .delete-widget-btn */
+.config-widget-btn {
+    position: absolute;
+    top: 5px;
+    right: 35px; /* Đặt cạnh nút xóa */
+    width: 24px; height: 24px;
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 10;
+    transition: 0.2s;
+}
+.config-widget-btn:hover { background: #3b82f6; color: white; }
+
+/* Modal Overlay */
+.modal-overlay {
+    display: none; /* Mặc định ẩn */
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    justify-content: center; align-items: center;
+}
+.modal-overlay.active { display: flex; }
+
+/* Modal Box */
+.modal-box {
+    background: #1e293b; color: white;
+    padding: 20px; border-radius: 12px;
+    width: 400px; border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
+.form-group input {
+    width: 100%; padding: 8px; border-radius: 6px;
+    border: 1px solid #334155; background: #0f172a; color: white;
+    box-sizing: border-box; /* Quan trọng để không bị vỡ layout */
+}
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.btn-cancel { background: transparent; border: 1px solid #475569; color: #cbd5e1; padding: 6px 15px; border-radius: 6px; cursor: pointer; }
+.btn-save-modal { background: #a855f7; border: none; color: white; padding: 6px 15px; border-radius: 6px; cursor: pointer; }
