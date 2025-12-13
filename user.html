@@ -57,62 +57,63 @@
     </div>
 
     <div id="settings" class="page">
-      <div class="page-header">
-        <h3>Cài đặt tài khoản</h3>
-      </div>
-      
-      <div style="max-width: 600px; margin: 20px auto; background: var(--bg-card); padding: 30px; border-radius: 12px; border: 1px solid var(--border);">
-        
-        <h4 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
-            <i class="fas fa-user-circle"></i> Thông tin cá nhân
-        </h4>
+      <h3>Cài đặt tài khoản</h3>
+      <div class="settings-container">
+        <div class="card settings-left">
+            <div class="avatar-section"><div class="avatar-circle-lg">User</div></div>
+            
+            <div class="form-group">
+                <label>Tên hiển thị (Sửa trực tiếp)</label>
+                <input type="text" id="st_fullname" placeholder="Đang tải..." onblur="updateUserInfo()">
+            </div>
+            
+            <div class="form-group"><label>Vai trò</label><input type="text" id="st_role" readonly></div>
+            <div class="form-group"><label>Username</label><input type="text" id="st_username" readonly></div>
+            <div class="form-group"><label>Email</label><input type="text" id="st_email" readonly></div>
+            
+            <div class="form-group">
+                <label>Số điện thoại</label>
+                <input type="text" id="st_phone" readonly placeholder="(Chưa có)">
+            </div>
+            
+            <div class="form-group"><label>Ngày tham gia</label><input type="text" id="st_created" readonly></div>
+        </div>
 
-        <div class="form-group">
-            <label>Họ và tên</label>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="st_fullname" placeholder="Tên hiển thị..." style="flex:1">
-                <button class="btn-save" onclick="updateUserInfo()"><i class="fas fa-save"></i> Lưu</button>
+        <div class="card settings-right">
+            <h4 class="st-title">Tùy biến & Bảo mật</h4>
+            
+            <div class="st-section">
+                <label class="st-label">Giao diện</label>
+                <div class="theme-options">
+                    <div class="theme-box t-default selected" onclick="changeTheme('default')"></div>
+                    <div class="theme-box t-ocean" onclick="changeTheme('ocean')"></div>
+                    <div class="theme-box t-forest" onclick="changeTheme('forest')"></div>
+                    <div class="theme-box t-light" onclick="changeTheme('light')"></div>
+                </div>
+            </div>
+
+            <div class="st-section">
+                <label class="st-label">Bảo mật 2 lớp</label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="sec" id="sec_normal" value="normal" checked onclick="handleSecurityClick('normal')"> 
+                        Mặc định
+                    </label>
+                    <label>
+                        <input type="radio" name="sec" id="sec_advanced" value="advanced" onclick="handleSecurityClick('advanced')"> 
+                        Nâng cao
+                    </label>
+                </div>
+                <p id="sec_hint" style="font-size:13px; color:#94a3b8; margin-top:5px; margin-left: 28px;">Chế độ cơ bản đang bật.</p>
+            </div>
+
+            <hr class="st-divider">
+
+            <div class="action-buttons">
+                <button class="btn-action warning" onclick="openModal('repass')">Đổi Mật khẩu</button>
+                <button class="btn-action warning" onclick="openModal('rephone')">Cập nhật Số điện thoại</button>
             </div>
         </div>
-
-        <div class="form-group">
-            <label>Email</label>
-            <input type="text" id="st_email" disabled style="opacity: 0.7; background: #334155; color: white;">
-        </div>
-
-        <h4 style="margin-top: 30px; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
-            <i class="fas fa-shield-alt"></i> Bảo mật
-        </h4>
-
-        <div class="form-group">
-            <label>Số điện thoại xác thực (2FA)</label>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="st_phone" disabled placeholder="Chưa đăng ký" style="flex:1; opacity: 0.7; background: #334155; color: white;">
-                
-                <button class="btn-tool" onclick="openModal('rephoneModal')">
-                    <i class="fas fa-edit"></i> Cập nhật
-                </button>
-            </div>
-            <small style="color: #94a3b8; display: block; margin-top: 5px;">Dùng để lấy lại mật khẩu khi quên.</small>
-        </div>
-
-        <div class="form-group" style="margin-top: 20px;">
-            <label>Mật khẩu</label>
-            <button class="btn-tool" style="width: 100%; text-align: left;" onclick="openModal('repassModal')">
-                <i class="fas fa-key"></i> Đổi mật khẩu
-            </button>
-        </div>
-
-        <h4 style="margin-top: 30px; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
-            <i class="fas fa-palette"></i> Giao diện
-        </h4>
-        <div class="theme-selector">
-            <div class="theme-box t-default" onclick="changeTheme('default')" title="Mặc định"></div>
-            <div class="theme-box t-ocean" onclick="changeTheme('ocean')" title="Đại dương"></div>
-            <div class="theme-box t-forest" onclick="changeTheme('forest')" title="Rừng xanh"></div>
-            <div class="theme-box t-light" onclick="changeTheme('light')" title="Sáng"></div>
-        </div>
-
       </div>
     </div>
   </div>
