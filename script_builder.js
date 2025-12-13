@@ -1,11 +1,25 @@
+// script_builder.js 
+
 const urlParams = new URLSearchParams(window.location.search);
 const targetUserId = urlParams.get('uid');
 const token = localStorage.getItem('accessToken');
 const API_URL = "https://smart-fish-tank.onrender.com/api";
 
-let grid = null; // Biến giữ lưới
+let grid = null; 
 
-// 1. KHỞI TẠO GRID & DATA
+// --- CẤU HÌNH QUẢN LÝ TRANG ---
+let currentTab = 'monitor'; // Trang hiện tại đang sửa (monitor hoặc control)
+let dashboardConfig = { 
+    monitor: [], 
+    control: [] 
+}; // Biến lưu trữ toàn bộ cấu hình của cả 2 trang
+
+// Biến tạm lưu config của từng widget (Label, Topic...)
+let widgetConfigs = {}; 
+
+// ============================================================
+// 1. KHỞI TẠO
+// ============================================================
 async function init() {
     if (!token || !targetUserId) {
         alert("Không có quyền truy cập!");
@@ -13,18 +27,11 @@ async function init() {
     }
 
     // Khởi tạo Gridstack
-    // float: true -> Widget không tự trôi lên trên (giữ vị trí cố định)
     grid = GridStack.init({
-        column: 12,       // Lưới 12 cột (chuẩn Bootstrap)
-        cellHeight: 100,  // Chiều cao cơ sở mỗi ô
-        margin: 10,       // Khoảng cách giữa các ô
-        float: true,      // Cho phép để khoảng trống
-        disableResize: false, 
-        disableDrag: false,
-        animate: true     // Hiệu ứng mượt
+        column: 12, cellHeight: 100, margin: 10, float: true,
+        disableResize: false, disableDrag: false, animate: true
     });
 
-    // Lấy dữ liệu cũ từ Server
     try {
         const res = await fetch(`${API_URL}/users`, { headers: { 'Authorization': `Bearer ${token}` } });
         if(res.ok) {
@@ -32,28 +39,87 @@ async function init() {
             const u = users.find(x => x.id == targetUserId);
             if(u) {
                 document.getElementById('targetUserName').innerText = u.username;
-                let config = {};
-                try { config = JSON.parse(u.ui_config || "{}"); } catch(e){}
                 
-                // Nếu có widgets đã lưu -> Load lên lưới
-                if (config.widgets && Array.isArray(config.widgets)) {
-                    loadWidgetsToGrid(config.widgets);
+                // Parse dữ liệu từ Server
+                let svConfig = {};
+                try { svConfig = JSON.parse(u.ui_config || "{}"); } catch(e){}
+                
+                // --- LOGIC TƯƠNG THÍCH DỮ LIỆU CŨ & MỚI ---
+                if (svConfig.widgets) {
+                    // Nếu là dữ liệu cũ (chưa chia trang) -> Gán hết vào Monitor
+                    dashboardConfig.monitor = svConfig.widgets;
+                    dashboardConfig.control = [];
+                } else if (svConfig.pages) {
+                    // Nếu là dữ liệu mới (đã chia trang)
+                    dashboardConfig.monitor = svConfig.pages.monitor || [];
+                    dashboardConfig.control = svConfig.pages.control || [];
                 }
+
+                // Mặc định load trang Giám sát trước
+                loadItemsToGrid(dashboardConfig.monitor);
+                updateTabUI(); // Cập nhật màu nút bấm
             }
         }
     } catch(e) { console.error("Lỗi tải dữ liệu:", e); }
 }
 
-// Chạy hàm khởi tạo
 init();
 
-// 2. LOAD WIDGET CŨ LÊN LƯỚI
-function loadWidgetsToGrid(widgets) {
-    grid.removeAll();
-    widgetConfigs = {}; // Reset bộ nhớ tạm
+// ============================================================
+// 2. LOGIC CHUYỂN TAB (GIÁM SÁT <-> ĐIỀU KHIỂN)
+// ============================================================
+function switchEditMode(mode) {
+    if (currentTab === mode) return; // Đang ở trang đó rồi thì không làm gì
 
-    widgets.forEach(w => {
-        // w.config là object { label, key } lưu trong DB
+    // B1: Lưu hiện trạng của trang cũ vào biến nhớ (dashboardConfig)
+    saveCurrentGridToMem();
+
+    // B2: Đổi trạng thái tab
+    currentTab = mode;
+    updateTabUI();
+
+    // B3: Xóa lưới cũ và vẽ lưới của trang mới
+    grid.removeAll();
+    
+    const itemsToLoad = (mode === 'monitor') ? dashboardConfig.monitor : dashboardConfig.control;
+    loadItemsToGrid(itemsToLoad);
+}
+
+// Cập nhật giao diện nút bấm (Màu tím cho trang đang chọn)
+function updateTabUI() {
+    const btnMon = document.getElementById('btnTabMonitor');
+    const btnCon = document.getElementById('btnTabControl');
+    const previewMon = document.getElementById('preview-mon');
+    const previewCon = document.getElementById('preview-con');
+    
+    // Reset style
+    const activeStyle = "background:#a855f7; color:white;";
+    const inactiveStyle = "background:transparent; color:#94a3b8;";
+    const sideActive = "background:#a855f7; color:white; opacity:1;";
+    const sideInactive = "background:transparent; color:#fff; opacity:0.5;";
+
+    if (currentTab === 'monitor') {
+        btnMon.style.cssText = activeStyle + "border:none; padding:6px 15px; border-radius:6px; cursor:pointer; font-weight:bold;";
+        btnCon.style.cssText = inactiveStyle + "border:none; padding:6px 15px; border-radius:6px; cursor:pointer; font-weight:bold;";
+        if(previewMon) previewMon.style.cssText = sideActive + "padding:12px; margin:5px 0; border-radius:6px; display:flex; gap:10px; align-items:center;";
+        if(previewCon) previewCon.style.cssText = sideInactive + "padding:12px; margin:5px 0; display:flex; gap:10px; align-items:center;";
+    } else {
+        btnCon.style.cssText = activeStyle + "border:none; padding:6px 15px; border-radius:6px; cursor:pointer; font-weight:bold;";
+        btnMon.style.cssText = inactiveStyle + "border:none; padding:6px 15px; border-radius:6px; cursor:pointer; font-weight:bold;";
+        if(previewCon) previewCon.style.cssText = sideActive + "padding:12px; margin:5px 0; border-radius:6px; display:flex; gap:10px; align-items:center;";
+        if(previewMon) previewMon.style.cssText = sideInactive + "padding:12px; margin:5px 0; display:flex; gap:10px; align-items:center;";
+    }
+}
+
+// ============================================================
+// 3. QUẢN LÝ WIDGET (THÊM / XÓA / LOAD)
+// ============================================================
+
+// Hàm load danh sách widget lên lưới
+function loadItemsToGrid(items) {
+    if (!items) return;
+    items.forEach(w => {
+        // Khôi phục config vào bộ nhớ tạm để Modal dùng được
         widgetConfigs[w.id] = w.config || {}; 
 
         const contentHTML = getWidgetContent(w.type, w.id, w.config);
@@ -62,48 +128,44 @@ function loadWidgetsToGrid(widgets) {
             x: w.x, y: w.y, w: w.w, h: w.h,
             content: contentHTML,
             id: w.id,
-            type: w.type 
+            type: w.type // Lưu loại widget vào node
         });
     });
 }
 
-// 3. THÊM WIDGET MỚI (Từ Drawer)
+// Hàm thêm Widget mới từ Drawer
 function addWidgetToGrid(type) {
-    let w = 3, h = 2; // Mặc định 3x2 ô
-    
-    // Kích thước gợi ý theo loại
-    if (type === 'switch') { w = 2; h = 1; } // Công tắc nhỏ gọn
-    if (type === 'camera') { w = 6; h = 4; } // Camera to
-    if (type === 'temp')   { w = 4; h = 3; } // Biểu đồ vừa
+    let w = 3, h = 2;
+    if (type === 'switch') { w = 2; h = 1; }
+    if (type === 'camera') { w = 6; h = 4; }
+    if (type === 'temp')   { w = 4; h = 3; }
 
-    const id = Date.now().toString(); // Tạo ID ngẫu nhiên
+    const id = Date.now().toString();
     const contentHTML = getWidgetContent(type, id);
 
-    // Thêm vào lưới (autoPosition: true để tự tìm chỗ trống)
     grid.addWidget({
         w: w, h: h,
         content: contentHTML,
         id: id,
-        type: type, // Lưu loại widget vào thuộc tính của node
+        type: type, // Lưu type
         autoPosition: true 
     });
     
-    toggleDrawer(); // Đóng ngăn kéo
+    toggleDrawer();
 }
 
-// 4. HTML NỘI DUNG CARD (DEMO CHO ADMIN)
+// Tạo nội dung HTML cho thẻ
 function getWidgetContent(type, id, config = {}) {
-    // config là tham số mới chứa label, key...
     let icon = 'cube', defaultLabel = 'Widget', color = '#a855f7';
 
     if (type === 'temp')   { icon = 'thermometer-half'; defaultLabel = 'Nhiệt độ'; color='#f87171'; }
     if (type === 'switch') { icon = 'toggle-on'; defaultLabel = 'Công tắc'; color='#4ade80'; }
     if (type === 'camera') { icon = 'video'; defaultLabel = 'Camera'; color='#60a5fa'; }
 
-    // Ưu tiên dùng label người dùng đã cấu hình, nếu không thì dùng mặc định
     const displayLabel = config.label || defaultLabel;
     const dataKey = config.key || "Chưa cấu hình";
 
+    // Thêm data-type vào div để dễ truy xuất nếu cần
     return `
         <div class="delete-widget-btn" onclick="removeWidget(this)"><i class="fas fa-times"></i></div>
         <div class="config-widget-btn" onclick="openConfigModal('${id}')"><i class="fas fa-cog"></i></div>
@@ -114,36 +176,49 @@ function getWidgetContent(type, id, config = {}) {
     `;
 }
 
-// 5. XÓA WIDGET
+// Xóa Widget
 window.removeWidget = function(el) {
-    // Tìm phần tử cha là grid-stack-item
     const item = el.closest('.grid-stack-item');
     grid.removeWidget(item);
 };
 
-// 6. LƯU CẤU HÌNH (QUAN TRỌNG)
-async function saveDashboard() {
+// ============================================================
+// 4. LƯU DỮ LIỆU (SAVE)
+// ============================================================
+
+// Hàm gom dữ liệu hiện tại trên lưới vào biến dashboardConfig
+function saveCurrentGridToMem() {
     const items = [];
-    
     grid.getGridItems().forEach(item => {
         const node = item.gridstackNode;
         if(node) {
-            // Lấy config từ bộ nhớ tạm widgetConfigs
+            // Lấy config từ bộ nhớ tạm
             const conf = widgetConfigs[node.id] || {};
-
             items.push({
                 id: node.id,
-                type: node.type,
-                x: node.x,
-                y: node.y,
-                w: node.w,
-                h: node.h,
-                config: conf // <--- QUAN TRỌNG: Lưu thêm cái này
+                type: node.type, // Lấy từ thuộc tính node.type đã gán lúc addWidget
+                x: node.x, y: node.y, w: node.w, h: node.h,
+                config: conf
             });
         }
     });
 
-    const payload = { ui_config: JSON.stringify({ widgets: items }) };
+    // Lưu vào đúng nhánh (monitor hoặc control)
+    if (currentTab === 'monitor') dashboardConfig.monitor = items;
+    else dashboardConfig.control = items;
+}
+
+// Lưu lên Server
+async function saveDashboard() {
+    // 1. Lưu trang hiện tại vào bộ nhớ trước đã
+    saveCurrentGridToMem();
+
+    // 2. Tạo payload theo cấu trúc mới { pages: ... }
+    const payload = { 
+        ui_config: JSON.stringify({ 
+            pages: dashboardConfig // Lưu cả 2 trang
+        }) 
+    };
 
     try {
         const res = await fetch(`${API_URL}/users/${targetUserId}/config`, {
@@ -152,7 +227,7 @@ async function saveDashboard() {
             body: JSON.stringify(payload)
         });
         
-        if(res.ok) alert("Đã lưu giao diện thành công!");
+        if(res.ok) alert("Đã lưu giao diện thành công (Cả 2 trang)!");
         else alert("Lỗi khi lưu!");
         
     } catch(e) { 
@@ -161,27 +236,22 @@ async function saveDashboard() {
     }
 }
 
+// ============================================================
+// 5. CÁC HÀM UI PHỤ TRỢ (MODAL, DRAWER)
+// ============================================================
 function toggleDrawer() {
     document.getElementById('widgetDrawer').classList.toggle('open');
 }
 
-// Biến tạm lưu cấu hình của các widget (để khi mở modal load lại được)
-let widgetConfigs = {}; 
-
 function openConfigModal(id) {
-    // Tìm widget trên lưới để lấy thông tin hiện tại
     const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
     if(!el) return;
 
-    // Lấy config hiện tại từ bộ nhớ tạm hoặc mặc định
     const currentConf = widgetConfigs[id] || { label: '', key: '' };
 
-    // Điền vào form
     document.getElementById('cfgWidgetId').value = id;
     document.getElementById('cfgLabel').value = currentConf.label;
     document.getElementById('cfgKey').value = currentConf.key;
-
-    // Hiện modal
     document.getElementById('configModal').classList.add('active');
 }
 
@@ -194,10 +264,10 @@ function saveWidgetConfig() {
     const label = document.getElementById('cfgLabel').value;
     const key = document.getElementById('cfgKey').value;
 
-    // 1. Lưu vào bộ nhớ tạm
+    // Lưu vào bộ nhớ tạm
     widgetConfigs[id] = { label, key };
 
-    // 2. Cập nhật giao diện ngay lập tức (DOM)
+    // Cập nhật hiển thị ngay lập tức
     const lbl = document.getElementById(`lbl-${id}`);
     const keySpan = document.getElementById(`key-${id}`);
     if(lbl) lbl.innerText = label;
