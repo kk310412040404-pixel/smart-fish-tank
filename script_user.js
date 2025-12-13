@@ -10,6 +10,19 @@ const API_URL = "https://smart-fish-tank.onrender.com/api";
 let myUserInfo = null;     
 let myCurrentConfig = {};  
 
+const MQTT_CONFIG = {
+    host: "cf75b9d0de634a4fa170d772c1681ed5.s1.eu.hivemq.cloud",
+    port: 8884, 
+    protocol: "wss",
+    username: "aquarium",   
+    password: "Hieu123456", 
+    clientId: "Web_User_" + Math.random().toString(16).substr(2, 8)
+};
+
+let mqttClient = null;
+let grid = null;            // Đối tượng GridStack
+let chartInstances = {};    // Lưu trữ biểu đồ
+let topicMap = {};          // <--- ĐÂY LÀ BIẾN BỊ THIẾU GÂY LỖI
 // --- 2. HÀM KHỞI TẠO ---
 async function initUserApp() {
     try {
@@ -530,5 +543,6 @@ function updateWidgetVal(id, value) {
         }
     }
 }
+
 
 
