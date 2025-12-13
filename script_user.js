@@ -481,3 +481,27 @@ function showToast(message, type = 'success') {
     toast.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
     box.appendChild(toast); setTimeout(() => toast.remove(), 3000);
 }
+
+// --- LOGIC CHO MENU MOBILE ---
+
+function toggleMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    // Thêm hoặc bỏ class 'show' để kích hoạt CSS
+    sidebar.classList.toggle('show');
+    overlay.classList.toggle('show');
+}
+
+// Tự động đóng Sidebar khi bấm vào một mục menu (UX tốt hơn)
+document.addEventListener("DOMContentLoaded", function() {
+    const menuItems = document.querySelectorAll('.sidebar ul li');
+    menuItems.forEach(item => {
+        item.addEventListener('click', () => {
+            // Chỉ đóng nếu đang ở giao diện mobile
+            if (window.innerWidth <= 768) {
+                toggleMobileSidebar();
+            }
+        });
+    });
+});
