@@ -2,6 +2,7 @@
 import os
 import random
 import json
+import requests # <--- BẮT BUỘC PHẢI CÓ
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 
@@ -11,7 +12,7 @@ from sqlmodel import select, Session, SQLModel
 from pydantic import BaseModel, EmailStr
 from fastapi.security import OAuth2PasswordBearer 
 from jose import jwt, JWTError
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
+# Đã xóa import fastapi_mail vì không dùng nữa
 
 # Import các module nội bộ
 from auth import (
@@ -29,10 +30,41 @@ SQLModel.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# --- CẤU HÌNH CORS (QUAN TRỌNG) ---
+# --- HÀM GỬI MAIL QUA API BREVO (KHÔNG DÙNG SMTP NỮA) ---
+def send_email_via_brevo(to_email: str, subject: str, html_content: str):
+    # Lấy API Key từ biến môi trường (Lưu ý: Đây là API Key, không phải SMTP Key)
+    api_key = os.getenv("MAIL_PASSWORD") 
+    url = "https://api.brevo.com/v3/smtp/email"
+    
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json"
+    }
+    
+    payload = {
+        "sender": {
+            "name": "Smart Fish Tank", 
+            "email": "kk310412040404@gmail.com" # Email người gửi
+        },
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "htmlContent": html_content
+    }
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code == 201:
+            print(f" Email sent to {to_email}")
+        else:
+            print(f" Error sending email: {response.text}")
+    except Exception as e:
+        print(f" Exception sending email: {str(e)}")
+
+# --- CẤU HÌNH CORS ---
 origins = [
-    "https://kk310412040404-pixel.github.io",  # Trang GitHub Pages của bạn
-    "http://127.0.0.1:5500",                   # Dành cho test Local
+    "https://kk310412040404-pixel.github.io",
+    "http://127.0.0.1:5500",
     "http://localhost:5500",
 ]
 
@@ -46,21 +78,7 @@ app.add_middleware(
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 
-mail_pass = os.getenv("MAIL_PASSWORD")
-# --- CẤU HÌNH GMAIL (Điền lại thông tin của bạn) ---
-conf = ConnectionConfig(
-    MAIL_USERNAME="ngytunkhoa311204n@gmail.com", # Email đăng ký Brevo
-    MAIL_PASSWORD=mail_pass,     # Mật khẩu SMTP của Brevo (Master Password)
-    MAIL_FROM="kk310412040404@gmail.com",                  # Email người gửi (Vẫn là mail bạn)
-    MAIL_PORT=465,
-    MAIL_SERVER="smtp-relay.brevo.com",                    # Server của Brevo
-    MAIL_STARTTLS=False,
-    MAIL_SSL_TLS=True,
-    USE_CREDENTIALS=True,
-    VALIDATE_CERTS=True
-)
-
-## --- MODELS REQUEST ---
+# --- MODELS REQUEST ---
 class UserRegister(BaseModel):
     username: str
     password: str
@@ -76,7 +94,7 @@ class VerifyOTP(BaseModel):
     otp_code: str
 
 class UserConfigUpdate(BaseModel):
-    ui_config: str  # Dành cho Admin cấu hình giao diện User
+    ui_config: str 
 
 class UserInfoUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -90,17 +108,15 @@ class UpdatePhoneRequest(BaseModel):
     phone: str
     current_password: str
 
-# --- ROUTE KIỂM TRA SERVER ---
+# --- ROUTE ---
 @app.get("/")
 def read_root():
-    return {"status": "live", "message": "Smart Fish Tank API is running correctly!"}
-
-# --- CÁC API AUTH & USER ---
+    return {"status": "live", "message": "Smart Fish Tank API is running via Brevo HTTP API!"}
 
 @app.on_event("startup")
 def on_startup():
     init_db()
-    # Tạo Admin mặc định nếu chưa có
+    # Tạo Admin mặc định
     with Session(engine) as session:
         if not session.exec(select(User).where(User.username == "admin")).first():
             print("--- CREATING DEFAULT ADMIN ---")
@@ -122,29 +138,29 @@ def on_startup():
             session.add(new_user)
             session.commit()
 
-# --- API AUTHENTICATION ---
+# --- API ĐĂNG KÝ (Đã sửa để dùng API Brevo) ---
 @app.post("/api/register")
 async def register(user_data: UserRegister, background_tasks: BackgroundTasks):
     with Session(engine) as session:
-        # 1. Kiểm tra User đã tồn tại chưa
+        # 1. Kiểm tra tồn tại
         existing_user = session.exec(select(User).where((User.username == user_data.username) | (User.email == user_data.email))).first()
         if existing_user:
             if existing_user.is_active:
                 raise HTTPException(status_code=400, detail="Username hoặc Email đã tồn tại")
             else:
-                # Nếu User tồn tại nhưng chưa kích hoạt -> Xóa OTP cũ & User cũ để tạo lại
+                # Xóa user rác chưa kích hoạt
                 otp_old = session.exec(select(OTP).where(OTP.email == existing_user.email)).first()
                 if otp_old: session.delete(otp_old)
                 session.delete(existing_user)
                 session.commit()
 
-        # 2. Tạo User mới (Chưa kích hoạt)
+        # 2. Tạo User mới
         default_config = {"theme": "default", "widgets": ["temp_chart"], "permissions": {"can_add": False, "can_control": False}}
         hashed_pwd = hash_password(user_data.password)
         
         new_user = User(
             username=user_data.username,
-            email=user_data.email,  # Lưu đúng email người dùng nhập
+            email=user_data.email,
             hashed_password=hashed_pwd,
             full_name=user_data.full_name,
             role="user",
@@ -153,56 +169,51 @@ async def register(user_data: UserRegister, background_tasks: BackgroundTasks):
         )
         session.add(new_user)
         
-        # 3. Tạo mã OTP
+        # 3. Tạo OTP
         otp_code = str(random.randint(100000, 999999))
         session.add(OTP(email=user_data.email, code=otp_code, expires_at=datetime.utcnow() + timedelta(minutes=5)))
         session.commit()
 
-        # 4. Gửi Mail OTP (SỬA LẠI ĐÚNG NGƯỜI NHẬN)
-        message = MessageSchema(
-            subject="Kích hoạt tài khoản Bể Cá",
-            recipients=[user_data.email],  # <--- QUAN TRỌNG: Phải là user_data.email
-            body=f"Mã OTP kích hoạt của bạn là: {otp_code}",
-            subtype=MessageType.plain
-        )
-        fm = FastMail(conf)
-        background_tasks.add_task(fm.send_message, message)
+        # 4. Gửi Mail qua API (ĐOẠN NÀY ĐÃ SỬA)
+        email_body = f"Mã OTP kích hoạt của bạn là: <b>{otp_code}</b>"
+        background_tasks.add_task(send_email_via_brevo, user_data.email, "Kích hoạt tài khoản Bể Cá", email_body)
 
-        return {"message": "Đăng ký thành công. Vui lòng kiểm tra email của bạn."}
+        return {"message": "Đăng ký thành công. Vui lòng kiểm tra email."}
 
+# --- API LOGIN STEP 1 (Đã sửa session.get) ---
 @app.post("/api/login/step1")
 async def login_step1(data: LoginStep1, background_tasks: BackgroundTasks):
     with Session(engine) as session:
-        # 1. Tìm User trong Database dựa vào Email nhập vào
+        # 1. Tìm User
         user = session.exec(select(User).where(User.email == data.email)).first()
         
-        # 2. Kiểm tra thông tin
         if not user or not verify_password(data.password, user.hashed_password):
             raise HTTPException(status_code=401, detail="Email hoặc mật khẩu không đúng")
         
         if not user.is_active:
              raise HTTPException(status_code=403, detail="Tài khoản chưa được kích hoạt")
 
-        # 3. Tạo OTP đăng nhập mới
-        otp_code = str(random.randint(100000, 999999))
+        # 2. Tạo OTP mới
+        otp_code = "".join([str(random.randint(0, 9)) for _ in range(6)])
         
-        # Xóa OTP cũ nếu có
-        old_otp = session.exec(select(OTP).where(OTP.email == user.email)).first()
-        if old_otp: session.delete(old_otp)
+        # Xóa OTP cũ (Dùng select an toàn hơn get)
+        existing_otp = session.exec(select(OTP).where(OTP.email == user.email)).first()
+        if existing_otp:
+            session.delete(existing_otp)
             
-        session.add(OTP(email=user.email, code=otp_code, expires_at=datetime.utcnow() + timedelta(minutes=5)))
+        new_otp = OTP(email=user.email, code=otp_code, expires_at=datetime.utcnow() + timedelta(minutes=5))
+        session.add(new_otp)
         session.commit()
-
-        # 4. Gửi Mail OTP (SỬA LẠI ĐÚNG NGƯỜI NHẬN)
-        message = MessageSchema(
-            subject="OTP Đăng nhập Hệ thống",
-            recipients=[user.email], # <--- QUAN TRỌNG: Phải là user.email (lấy từ DB)
-            body=f"Xin chào {user.username},\nMã OTP đăng nhập của bạn là: {otp_code}\nMã có hiệu lực trong 5 phút.",
-            subtype=MessageType.plain
-        )
-        fm = FastMail(conf)
-        background_tasks.add_task(fm.send_message, message)
-
+    
+        # 3. Gửi Mail qua API
+        email_body = f"""
+        <h3>Mã xác thực đăng nhập</h3>
+        <p>Xin chào {user.username},</p>
+        <p>Mã OTP của bạn là: <b style='font-size:24px; color:#a855f7'>{otp_code}</b></p>
+        <p>Mã có hiệu lực trong 5 phút.</p>
+        """
+        background_tasks.add_task(send_email_via_brevo, user.email, "Mã OTP Đăng Nhập", email_body)
+    
         return {"message": "OTP sent", "email": user.email}
 
 @app.post("/api/verify-otp")
@@ -227,17 +238,16 @@ def verify_otp_and_get_token(data: VerifyOTP):
         return {
             "access_token": token["access_token"],
             "username": user.username,
-            "full_name": user.full_name, # Trả về để client biết
+            "full_name": user.full_name,
             "role": user.role,
             "ui_config": user.ui_config
         }
 
-# --- API QUẢN LÝ USER ---
 @app.get("/api/users")
 def get_all_users():
     with Session(engine) as session:
         users = session.exec(select(User)).all()
-        return users # SQLModel tự convert sang JSON
+        return users
 
 @app.put("/api/users/{user_id}/config")
 def update_user_config(user_id: int, data: UserConfigUpdate):
@@ -262,7 +272,7 @@ def update_user_info(user_id: int, info: UserInfoUpdate):
         session.commit()
         return {"message": "Info updated"}
 
-#  API Gửi OTP để đổi mật khẩu (User phải bấm nút mới gửi)
+# API Gửi OTP Đổi Mật Khẩu (Đã sửa để dùng API Brevo)
 @app.post("/api/users/{user_id}/request-password-otp")
 async def request_password_otp(user_id: int, background_tasks: BackgroundTasks):
     with Session(engine) as session:
@@ -270,38 +280,26 @@ async def request_password_otp(user_id: int, background_tasks: BackgroundTasks):
         if not user:
             raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
         
-        # Tạo OTP mới
         otp_code = str(random.randint(100000, 999999))
         
-        # Xóa OTP cũ nếu có để tránh rác DB
+        # Xóa OTP cũ
         existing_otp = session.exec(select(OTP).where(OTP.email == user.email)).first()
         if existing_otp: session.delete(existing_otp)
         
-        # Lưu OTP mới (Hết hạn sau 5 phút)
         session.add(OTP(email=user.email, code=otp_code, expires_at=datetime.utcnow() + timedelta(minutes=5)))
         session.commit()
 
-        # Soạn Email
+        # Gửi Mail qua API
         html_content = f"""
         <h3>Yêu cầu Đổi Mật Khẩu</h3>
         <p>Xin chào <b>{user.username}</b>,</p>
-        <p>Mã xác thực (OTP) để đổi mật khẩu của bạn là:</p>
-        <h2 style="color: #d946ef; letter-spacing: 5px;">{otp_code}</h2>
-        <p>Mã này có hiệu lực trong 5 phút. Vui lòng không chia sẻ cho người khác.</p>
+        <p>Mã xác thực (OTP) là:</p>
+        <h2 style="color: #d946ef;">{otp_code}</h2>
         """
-        
-        message = MessageSchema(
-            subject="Mã OTP Đổi Mật Khẩu",
-            recipients=[user.email],
-            body=html_content,
-            subtype=MessageType.html
-        )
-        fm = FastMail(conf)
-        background_tasks.add_task(fm.send_message, message)
+        background_tasks.add_task(send_email_via_brevo, user.email, "Mã OTP Đổi Mật Khẩu", html_content)
         
         return {"message": "OTP sent"}
 
-# API Thực hiện đổi mật khẩu
 @app.put("/api/users/{user_id}/change-password")
 def change_password(user_id: int, data: ChangePasswordRequest):
     with Session(engine) as session:
@@ -309,7 +307,6 @@ def change_password(user_id: int, data: ChangePasswordRequest):
         if not user: 
             raise HTTPException(status_code=404, detail="User not found")
         
-        # 1. Kiểm tra OTP
         otp_record = session.exec(select(OTP).where(OTP.email == user.email)).first()
         if not otp_record:
              raise HTTPException(status_code=400, detail="Vui lòng lấy mã OTP trước")
@@ -320,15 +317,12 @@ def change_password(user_id: int, data: ChangePasswordRequest):
         if datetime.utcnow() > otp_record.expires_at:
              raise HTTPException(status_code=400, detail="Mã OTP đã hết hạn")
              
-        # 2. Đổi mật khẩu (Hash mật khẩu mới)
         user.hashed_password = hash_password(data.new_password)
         session.add(user)
         
-        # 3. Xóa OTP sau khi dùng xong
         session.delete(otp_record)
         session.commit()
         
-        # Lưu ý: Không thu hồi Token cũ -> User vẫn đăng nhập bình thường
         return {"message": "Đổi mật khẩu thành công"}
     
 @app.delete("/api/users/{user_id}")
@@ -338,11 +332,9 @@ def delete_user(user_id: int):
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Không cho phép xóa Admin
         if user.role == "admin":
              raise HTTPException(status_code=400, detail="Không thể xóa Admin")
              
-        # Xóa OTP liên quan trước
         otp = session.exec(select(OTP).where(OTP.email == user.email)).first()
         if otp: session.delete(otp)
         
@@ -350,7 +342,6 @@ def delete_user(user_id: int):
         session.commit()
         return {"message": "User deleted"}
 
-# --- API MỚI: LẤY THÔNG TIN CỦA CHÍNH MÌNH (Cho User) ---
 @app.get("/api/users/me")
 def get_my_info(token: str = Depends(oauth2_scheme)): 
     try:
@@ -365,7 +356,6 @@ def get_my_info(token: str = Depends(oauth2_scheme)):
         user = session.get(User, int(user_id))
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        
         return user
     
 @app.put("/api/users/{user_id}/update-phone-secure")
@@ -375,15 +365,12 @@ def update_phone_secure(user_id: int, data: UpdatePhoneRequest):
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        # 1. Kiểm tra mật khẩu hiện tại
         if not verify_password(data.current_password, user.hashed_password):
              raise HTTPException(status_code=400, detail="Mật khẩu xác nhận không đúng!")
 
-        # 2. Kiểm tra định dạng số điện thoại (Cơ bản)
         if not data.phone.isdigit() or len(data.phone) < 9:
              raise HTTPException(status_code=400, detail="Số điện thoại không hợp lệ")
 
-        # 3. Lưu SĐT mới
         user.phone = data.phone
         session.add(user)
         session.commit()
