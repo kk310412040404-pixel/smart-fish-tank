@@ -1,8 +1,9 @@
-/* style_builder.css 
+/* style_builder.css - BẢN ĐẦY ĐỦ (FULL) & ĐÃ FIX LỖI LAYOUT */
+
 /* 1. Reset lại Body để phù hợp với trang Builder (có Header) */
 body {
-    display: block !important; /* Ghi đè display:flex của style_user.css */
-    overflow: hidden; /* Không cho cuộn trang chính */
+    display: block !important; /* QUAN TRỌNG: Ghi đè display:flex của style_user.css */
+    overflow: hidden; /* Không cho cuộn trang chính, chỉ cuộn vùng canvas */
     background-color: #0f172a;
     padding: 0;
     margin: 0;
