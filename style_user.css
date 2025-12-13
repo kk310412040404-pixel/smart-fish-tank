@@ -229,4 +229,57 @@ canvas { width: 100% !important; height: 100% !important; }
         border-radius: 12px !important;
         box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
     }
+
+    
+    /* 1. Hiện thanh Header chứa nút Menu */
+    .mobile-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        background: var(--bg-card);
+        margin-bottom: 15px;
+        border-radius: 8px;
+    }
+    
+    .menu-btn {
+        background: none; border: none;
+        color: var(--text-color); font-size: 24px; cursor: pointer;
+    }
+
+    /* 2. Cấu hình Sidebar ẩn sang trái */
+    .sidebar {
+        position: fixed;
+        top: 0; left: 0;
+        height: 100vh;
+        width: 260px;
+        z-index: 1000; /* Nổi lên trên cùng */
+        transform: translateX(-100%); /* Dịch chuyển ra khỏi màn hình */
+        transition: transform 0.3s ease-in-out; /* Hiệu ứng trượt mượt */
+        box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+    }
+
+    /* Khi có class 'show' -> Trượt vào màn hình */
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    /* 3. Lớp phủ mờ (Overlay) */
+    .sidebar-overlay {
+        display: block; /* Cho phép hiển thị, nhưng ẩn bằng opacity */
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6); /* Màu đen mờ */
+        z-index: 999; /* Nằm dưới sidebar nhưng trên nội dung */
+        opacity: 0;
+        visibility: hidden;
+        transition: 0.3s;
+    }
+
+    /* Khi có class 'show' -> Hiện lên */
+    .sidebar-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
 }
