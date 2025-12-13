@@ -2,6 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   
@@ -16,6 +17,10 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="theme-default">
+  <div class="mobile-menu-btn" onclick="toggleMobileSidebar()">
+    <i class="fas fa-bars"></i>
+  </div>
+  <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
   <div id="toast-box"></div>
 
@@ -167,4 +172,3 @@
   <script src="script_user.js"></script>
 </body>
 </html>
-
