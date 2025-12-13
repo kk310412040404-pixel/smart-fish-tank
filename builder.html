@@ -19,7 +19,16 @@
       <div style="display:flex; align-items:center; gap:10px;">
           <h3 style="margin:0; color:white;">Thiết kế Dashboard</h3>
           <span class="user-badge" id="targetUserName">User...</span>
-      </div>
+
+          <div class="page-tabs" style="margin-left:30px; background:#334155; padding:4px; border-radius:8px; display:flex; gap:5px;">
+              <button id="btnTabMonitor" onclick="switchEditMode('monitor')" style="background:#a855f7; color:white; border:none; padding:6px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">
+                  <i class="fas fa-chart-line"></i> Giám sát
+              </button>
+              <button id="btnTabControl" onclick="switchEditMode('control')" style="background:transparent; color:#94a3b8; border:none; padding:6px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">
+                  <i class="fas fa-gamepad"></i> Điều khiển
+              </button>
+          </div>
+          </div>
       <div class="builder-actions">
           <button class="btn-tool" onclick="toggleDrawer()"><i class="fas fa-plus"></i> Thêm Widget</button>
           <button class="btn-save" onclick="saveDashboard()"><i class="fas fa-save"></i> Lưu</button>
@@ -30,10 +39,10 @@
       <div class="disabled-sidebar">
         <h2 style="color:#a855f7; text-align:center; margin-bottom:20px; font-weight:bold; font-size:24px;">Smart Tank</h2>
         <ul style="list-style:none; padding:0;">
-          <li style="padding:12px; margin:5px 0; background:#a855f7; color:white; border-radius:6px; display:flex; gap:10px; align-items:center;">
+          <li id="preview-mon" style="padding:12px; margin:5px 0; background:#a855f7; color:white; border-radius:6px; display:flex; gap:10px; align-items:center;">
               <i class="fas fa-chart-line"></i> Giám sát
           </li>
-          <li style="padding:12px; margin:5px 0; color:#fff; opacity:0.5; display:flex; gap:10px; align-items:center;">
+          <li id="preview-con" style="padding:12px; margin:5px 0; color:#fff; opacity:0.5; display:flex; gap:10px; align-items:center;">
               <i class="fas fa-toggle-on"></i> Điều khiển
           </li>
         </ul>
@@ -58,6 +67,7 @@
           </div>
       </div>
   </div>
+
   <div id="configModal" class="modal-overlay">
     <div class="modal-box">
         <h3>Cấu hình Widget</h3>
