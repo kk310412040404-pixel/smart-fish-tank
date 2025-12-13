@@ -1,4 +1,4 @@
-/* style_builder.css - BẢN ĐẦY ĐỦ (FULL) & ĐÃ FIX LỖI LAYOUT */
+/* style_builder.css 
 
 /* 1. Reset lại Body để phù hợp với trang Builder (có Header) */
 body {
@@ -34,29 +34,25 @@ body {
     border: 1px solid #a855f7;
 }
 
+.builder-actions {
+    display: flex;          /* Giúp các phần tử con nằm ngang hàng */
+    align-items: center;    /* Căn giữa theo chiều dọc */
+    gap: 10px;             /* Tạo khoảng cách giữa 2 nút (thay thế cho margin-left cũ) */
+}
+
+/* Cập nhật lại class .builder-actions button */
 .builder-actions button {
-display: inline-flex;       /* Để icon và chữ căn giữa đẹp hơn */
-    align-items: center;
-    justify-content: center;
-    gap: 8px;                   /* Khoảng cách giữa Icon và Chữ */
-    
-    height: 40px;               /* Chiều cao cố định cho đều nhau */
-    min-width: 130px;           /* QUAN TRỌNG: Độ rộng tối thiểu để 2 nút to bằng nhau */
-    padding: 0 20px;
-    
+    padding: 8px 15px;
+    border-radius: 6px;
     border: none;
-    border-radius: 8px;         /* Bo góc mềm mại hơn */
-    font-family: 'Segoe UI', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-    color: white;
     cursor: pointer;
-    
-    /* Hiệu ứng mượt mà & Bóng đổ */
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    position: relative;
-    overflow: hidden;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    display: inline-flex; 
+    align-items: center; 
+    gap: 5px;
+    white-space: nowrap;    /* QUAN TRỌNG: Ngăn chữ trong nút bị xuống dòng */
 }
 .btn-tool { background: #3b82f6; }
 .btn-tool:hover { background: #2563eb; }
@@ -213,4 +209,3 @@ display: inline-flex;       /* Để icon và chữ căn giữa đẹp hơn */
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .btn-cancel { background: transparent; border: 1px solid #475569; color: #cbd5e1; padding: 6px 15px; border-radius: 6px; cursor: pointer; }
 .btn-save-modal { background: #a855f7; border: none; color: white; padding: 6px 15px; border-radius: 6px; cursor: pointer; }
-
