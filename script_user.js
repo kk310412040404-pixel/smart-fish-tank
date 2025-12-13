@@ -74,23 +74,19 @@ function initDashboard() {
 
     // Kiểm tra kích thước màn hình
     const isMobile = window.innerWidth < 768;
-
     const gridOptions = {
-        // Chế độ 'staticGrid: true' nghĩa là User chỉ xem, không kéo thả được
-        staticGrid: true, 
-        margin: 10,
+        staticGrid: true, // Người dùng không kéo thả được
         float: true,
-
-        // --- ĐIỂM QUAN TRỌNG NHẤT ---
-        // Nếu là Mobile: Dùng 2 cột (để xếp 2 công tắc/hàng)
-        // Nếu là PC: Dùng 12 cột (chuẩn cũ)
-        column: isMobile ? 2 : 12, 
-
-        // Tắt chế độ "tự động về 1 cột" của thư viện
-        // Để ta có thể ép nó hiển thị 2 cột trên mobile
-        disableOneColumnMode: true,
         
-        // Khóa thao tác chuột/cảm ứng để lướt web mượt hơn
+        // --- QUAN TRỌNG: KHOẢNG CÁCH GIỮA CÁC WIDGET ---
+        margin: 15, // Khoảng cách (gap) là 15px (bạn có thể tăng/giảm số này)
+
+        // --- QUAN TRỌNG: CẤU HÌNH CỘT ---
+        // Mobile: 1 cột (Widget sẽ tự giãn max width)
+        // PC: 12 cột (Giữ nguyên bố cục cũ)
+        column: isMobile ? 1 : 12, 
+
+        disableOneColumnMode: true, // Để ta tự kiểm soát cột bằng logic bên trên
         disableDrag: true,
         disableResize: true
     };
@@ -550,3 +546,4 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 });
+
