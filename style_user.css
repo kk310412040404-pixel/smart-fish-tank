@@ -1,4 +1,4 @@
-/* style_user.css 
+/* style_user.css
 
 /* --- 1. CẤU TRÚC CƠ BẢN --- */
 body { 
@@ -190,87 +190,43 @@ canvas { width: 100% !important; height: 100% !important; }
 /* KHI MÀN HÌNH NHỎ HƠN 768PX (ĐIỆN THOẠI) */
 @media screen and (max-width: 768px) {
     
-    /* 1. Cho phép cuộn trang dọc (Vì nội dung sẽ dài ra) */
-    body {
-        overflow-y: auto !important;
+    /* 1. Thiết lập lưới 2 cột */
+    .grid-stack {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr; /* Chia 2 cột đều nhau */
+        gap: 10px; /* Khoảng cách giữa các widget */
         height: auto !important;
-        position: relative;
+        padding-bottom: 60px;
     }
 
-    /* 2. Cài đặt nút Menu (3 gạch) */
-    .mobile-menu-btn {
-        display: flex;
-        align-items: center; justify-content: center;
-        position: fixed;
-        top: 15px; left: 15px;
-        width: 45px; height: 45px;
-        background: var(--bg-card); /* Lấy màu theo theme */
-        border: 1px solid var(--border);
-        color: var(--primary);
-        border-radius: 8px;
-        z-index: 2000; /* Cao nhất để luôn bấm được */
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        font-size: 20px;
-    }
-
-    /* 3. Sidebar: Mặc định ẩn sang trái */
-    .sidebar {
-        position: fixed;
-        left: -280px; /* Đẩy ra khỏi màn hình */
-        top: 0; bottom: 0;
-        z-index: 2001; /* Cao hơn nút menu */
-        transition: left 0.3s ease; /* Hiệu ứng trượt */
-        box-shadow: 5px 0 15px rgba(0,0,0,0.5);
-    }
-    
-    /* Khi có class 'show' (do JS thêm vào) thì trượt ra */
-    .sidebar.show {
-        left: 0;
-    }
-
-    /* 4. Lớp phủ đen mờ */
-    .sidebar-overlay {
-        display: none;
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.7); /* Đen mờ 70% */
-        z-index: 2000;
-        backdrop-filter: blur(3px);
-    }
-    .sidebar-overlay.show {
-        display: block;
-    }
-
-    /* 5. Nội dung chính: Tràn ra toàn màn hình */
-    .main-content {
-        margin-left: 0 !important; /* Bỏ lề trái */
-        width: 100% !important;
-        padding: 70px 15px 30px 15px; /* Padding top lớn để tránh nút menu */
-        height: auto;
-        overflow: visible;
-    }
-
-    /* 6. Xử lý GridStack (Quan trọng nhất) */
-    /* Ép các Widget thành 1 cột dọc, bỏ vị trí tuyệt đối */
+    /* 2. Reset các widget về trạng thái tĩnh (để CSS Grid điều khiển) */
     .grid-stack-item {
         position: relative !important;
-        width: 100% !important; /* Chiếm hết chiều ngang */
+        width: auto !important;
         left: auto !important;
         top: auto !important;
-        margin-bottom: 20px; /* Khoảng cách giữa các widget */
-        height: auto !important; /* Chiều cao tự dãn theo nội dung */
-    }
-    
-    /* Widget bên trong */
-    .grid-stack-item-content {
-        position: relative !important;
-        height: auto !important;
-        min-height: 150px; /* Chiều cao tối thiểu cho đẹp */
-        inset: 0 !important; /* Reset vị trí */
+        margin: 0 !important;
+        inset: auto !important;
     }
 
-    /* Vùng chứa grid */
-    .grid-stack {
+    /* 3. QUY TẮC THÔNG MINH: */
+    /* Mặc định: Widget chiếm 1 cột (1fr) -> Dành cho Công tắc, Cảm biến nhỏ */
+
+    /* Nếu Widget có chiều cao (gs-h) từ 3 trở lên (Biểu đồ, Camera...) */
+    /* Thì bắt buộc chiếm hết 2 cột (span 2) */
+    .grid-stack-item[gs-h="3"], 
+    .grid-stack-item[gs-h="4"], 
+    .grid-stack-item[gs-h="5"],
+    .grid-stack-item[gs-h="6"],
+    .grid-stack-item[gs-w="12"] { /* Hoặc widget vốn dĩ đã rộng full 12 ô trên PC */
+        grid-column: span 2; 
+    }
+
+    /* 4. Tinh chỉnh nội dung bên trong cho đẹp */
+    .grid-stack-item-content {
         height: auto !important;
+        min-height: 120px; /* Chiều cao tối thiểu */
+        border-radius: 12px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
     }
 }
