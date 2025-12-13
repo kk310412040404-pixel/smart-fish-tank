@@ -311,21 +311,26 @@ function initMonitorPage() {
 
     // 4. Duyệt qua từng Widget và vẽ lên lưới
     myCurrentConfig.widgets.forEach(w => {
-        // Tạo nội dung HTML bên trong
-        const contentHTML = generateWidgetContent(w);
         
-        // Thêm vào lưới (Dùng đúng tọa độ x, y, w, h của Admin)
-        grid.addWidget({
-            x: w.x, y: w.y, w: w.w, h: w.h,
-            content: contentHTML,
-            id: w.id
-        });
+        // Giả sử config lưu dạng { label: "...", key: "hieu/aquarium/temp" }
+        const topic = w.config ? w.config.key : "";
+        
+        // Lưu vào bản đồ: Topic này thuộc về Widget ID nào?
+        if (topic) {
+            if (!topicMap[topic]) topicMap[topic] = [];
+            topicMap[topic].push(w.id);
+        }
+        // -----------------------------------------------------------------------
 
-        // Nếu là biểu đồ -> Vẽ ChartJS
+        const contentHTML = generateWidgetContent(w);
+        grid.addWidget({ x: w.x, y: w.y, w: w.w, h: w.h, content: contentHTML, id: w.id });
+
         if (w.type === 'chart' || w.type === 'temp') {
+            // Truyền thêm topic để hiển thị nếu cần
             renderChart(w.id, w.dataType);
         }
     });
+    connectMQTT(); 
 }
 
 // Hàm tạo HTML nội dung Card
@@ -375,17 +380,23 @@ function generateWidgetContent(w) {
 
 // Hàm vẽ biểu đồ (Giả lập dữ liệu để demo)
 function renderChart(id, type) {
-    setTimeout(() => { // Đợi DOM load xong
+    setTimeout(() => { 
         const ctx = document.getElementById(`chart_${id}`);
         if (!ctx) return;
 
-        new Chart(ctx, {
+        // Xóa biểu đồ cũ nếu có (tránh lỗi vẽ chồng)
+        if (chartInstances[id]) {
+            chartInstances[id].destroy();
+        }
+
+        // Tạo biểu đồ mới và LƯU VÀO chartInstances
+        chartInstances[id] = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['10:00', '10:05', '10:10', '10:15', '10:20'],
+                labels: [], // Bắt đầu rỗng
                 datasets: [{
-                    label: 'Giá trị đo',
-                    data: [25, 26, 24, 27, 26],
+                    label: 'Giá trị',
+                    data: [], // Bắt đầu rỗng
                     borderColor: '#a855f7',
                     backgroundColor: 'rgba(168, 85, 247, 0.2)',
                     fill: true,
@@ -397,7 +408,7 @@ function renderChart(id, type) {
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: { 
-                    x: { display: false }, 
+                    x: { display: true }, // Hiện trục thời gian
                     y: { grid: { color: '#334155' } } 
                 }
             }
@@ -407,13 +418,106 @@ function renderChart(id, type) {
 
 // Hàm bật tắt thiết bị
 function toggleDevice(id, btn) {
-    if (btn.style.color === "rgb(239, 68, 68)") {
-        btn.style.color = "#4ade80"; // Xanh
-        showToast("Đã Bật thiết bị", "success");
-    } else {
-        btn.style.color = "#ef4444"; // Đỏ
-        showToast("Đã Tắt thiết bị", "success");
+    // Tìm Topic của widget này
+    // Lưu ý: Đây là cách tìm ngược từ ID ra Topic. 
+    // Để đơn giản, ta duyệt topicMap
+    let targetTopic = "";
+    for (const [t, ids] of Object.entries(topicMap)) {
+        if (ids.includes(id)) {
+            targetTopic = t; 
+            break;
+        }
     }
 
+    if (!targetTopic) {
+        showToast("Chưa cấu hình Topic cho nút này!", "error");
+        return;
+    }
+
+    // Xác định trạng thái muốn gửi
+    const isCurrentlyOn = (btn.style.color === "rgb(74, 222, 128)" || btn.style.color === "#4ade80");
+    const msg = isCurrentlyOn ? "OFF" : "ON"; // Đảo trạng thái
+
+    // Gửi lệnh MQTT
+    if (mqttClient && mqttClient.connected) {
+        mqttClient.publish(targetTopic, msg);
+        showToast(`Đã gửi lệnh: ${msg}`, "success");
+        
+        // (Tùy chọn) Cập nhật UI ngay lập tức để phản hồi nhanh
+        // updateWidgetVal(id, msg); 
+    } else {
+        showToast("Mất kết nối MQTT!", "error");
+    }
 }
+
+//MQTT
+function connectMQTT() {
+    console.log("Đang kết nối MQTT...", MQTT_CONFIG.host);
+    const { host, port, protocol, username, password, clientId } = MQTT_CONFIG;
+    
+    // Tạo URL kết nối (WSS cho trình duyệt)
+    const connectUrl = `${protocol}://${host}:${port}/mqtt`;
+
+    mqttClient = mqtt.connect(connectUrl, {
+        clientId, username, password, 
+        clean: true, 
+        reconnectPeriod: 5000 
+    });
+
+    mqttClient.on('connect', () => {
+        console.log("✅ MQTT Connected!");
+        showToast("Đã kết nối Server", "success");
+        
+        // Đăng ký (Subscribe) tất cả các topic có trong Config
+        for (const topic in topicMap) {
+            console.log("Subscribing to:", topic);
+            mqttClient.subscribe(topic);
+        }
+    });
+
+    mqttClient.on('message', (topic, payload) => {
+        const msgString = payload.toString();
+        // console.log("Nhận:", topic, msgString);
+
+        // Tìm xem Widget nào cần cập nhật
+        if (topicMap[topic]) {
+            topicMap[topic].forEach(widgetId => {
+                updateWidgetVal(widgetId, msgString);
+            });
+        }
+    });
+}
+
+
+function updateWidgetVal(id, value) {
+    // 1. Xử lý Biểu đồ
+    if (chartInstances[id]) {
+        const chart = chartInstances[id];
+        const now = new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        
+        // Thêm dữ liệu mới
+        chart.data.labels.push(now);
+        chart.data.datasets[0].data.push(parseFloat(value));
+
+        // Giới hạn chỉ hiện 10 điểm dữ liệu gần nhất (để không bị rối)
+        if (chart.data.labels.length > 10) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
+        }
+        chart.update();
+    }
+    
+    // 2. Xử lý Công tắc (Switch) & Text
+    // Tìm element hiển thị text (nếu có)
+    // Cập nhật trạng thái nút bấm
+    const btnIcon = document.querySelector(`.widget-content[gs-id="${id}"] .fa-power-off`);
+    if (btnIcon) {
+        if (value.toUpperCase() === "ON") {
+            btnIcon.style.color = "#4ade80"; // Xanh
+        } else {
+            btnIcon.style.color = "#ef4444"; // Đỏ
+        }
+    }
+}
+
 
