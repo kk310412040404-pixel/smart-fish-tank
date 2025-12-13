@@ -2,9 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>User Dashboard</title>
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   
@@ -17,12 +15,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="theme-default">
-  <div class="mobile-menu-btn" onclick="toggleMobileSidebar()">
-    <i class="fas fa-bars"></i>
-  </div>
-  <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
-  <div id="toast-box"></div>
+  <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
   <div class="sidebar">
     <h2><i class="fas fa-fish"></i> Smart Tank</h2>
@@ -45,6 +39,15 @@
   </div>
 
   <div class="main-content">
+
+    <div class="mobile-header">
+        <button class="menu-btn" onclick="toggleMobileSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h3>Dashboard</h3>
+    </div>
+
+    <div id="toast-box"></div>
     
     <div id="monitor" class="page active">
       <div class="page-header">
