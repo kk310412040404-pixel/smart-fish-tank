@@ -11,6 +11,7 @@
   
   <link href="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack.min.css" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack-all.js"></script>
+
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -23,7 +24,6 @@
     <ul>
       <li class="active" onclick="showPage('monitor')"><i class="fas fa-chart-line"></i> Giám sát</li>
       <li onclick="showPage('control')"><i class="fas fa-toggle-on"></i> Điều khiển</li>
-      <li onclick="showPage('manager')"><i class="fas fa-fish"></i> Quản lý</li>
       <li onclick="showPage('settings')"><i class="fas fa-cog"></i> Cài đặt</li>
     </ul>
     
@@ -47,11 +47,6 @@
     <section id="control" class="page">
         <h3>Điều khiển thiết bị</h3>
         <p>Giao diện điều khiển...</p>
-    </section>
-
-    <section id="manager" class="page">
-        <h3>Quản lý</h3>
-        <p>Nội dung quản lý...</p>
     </section>
 
     <section id="settings" class="page">
@@ -169,5 +164,4 @@
 
   <script src="script_user.js"></script>
 </body>
-
 </html>
