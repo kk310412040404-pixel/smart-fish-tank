@@ -79,7 +79,10 @@ function initDashboard() {
         float: true,
         
         // --- QUAN TRỌNG: KHOẢNG CÁCH GIỮA CÁC WIDGET ---
-        margin: 15, // Khoảng cách (gap) là 15px (bạn có thể tăng/giảm số này)
+        margin: 10, // Khoảng cách (gap) là 15px (bạn có thể tăng/giảm số này)
+        // Mobile: 1 ô cao 85px (Gọn hơn)
+        // PC: 1 ô cao 110px (Thoáng hơn)
+        cellHeight: isMobile ? 85 : 110,
 
         // --- QUAN TRỌNG: CẤU HÌNH CỘT ---
         // Mobile: 1 cột (Widget sẽ tự giãn max width)
@@ -546,4 +549,5 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 });
+
 
