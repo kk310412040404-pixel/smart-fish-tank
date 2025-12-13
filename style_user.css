@@ -1,4 +1,4 @@
-/* style_user.css - FINAL VERSION (ĐÃ FIX LỖI THEME) */
+/* style_user.css 
 
 /* --- 1. CẤU TRÚC CƠ BẢN --- */
 body { 
@@ -9,7 +9,7 @@ body {
     background: var(--bg-main); 
     color: var(--text-color); 
     transition: 0.3s; 
-    overflow: hidden; /* Ngăn cuộn body */
+    overflow: hidden; /* Quan trọng: Ngăn cuộn body */
 }
 
 /* Theme Variables */
@@ -26,7 +26,7 @@ body.theme-light { --bg-sidebar: #f1f5f9; --bg-main: #ffffff; --bg-card: #f8fafc
     border-right: 1px solid var(--border); 
     display: flex; 
     flex-direction: column; 
-    flex-shrink: 0; 
+    flex-shrink: 0; /* Không bị co lại */
 }
 .sidebar h2 { color: var(--primary); text-align: center; margin-bottom: 20px; font-size: 22px; }
 .sidebar ul { list-style: none; padding: 0; flex: 1; }
@@ -38,11 +38,11 @@ body.theme-light { --bg-sidebar: #f1f5f9; --bg-main: #ffffff; --bg-card: #f8fafc
 .sidebar li:hover, .sidebar li.active { background: var(--primary); color: #fff; opacity: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 .sidebar-footer li { color: #ef4444 !important; opacity: 1; margin-top: auto; border-top: 1px solid var(--border); padding-top: 20px; }
 
-/* Main Content */
+/* Main Content (ĐÃ SỬA TÊN CLASS CHO KHỚP HTML) */
 .main-content { 
     flex: 1; 
     padding: 30px; 
-    overflow-y: auto; 
+    overflow-y: auto; /* Cho phép cuộn nội dung */
     position: relative;
 }
 
@@ -56,18 +56,20 @@ body.theme-light { --bg-sidebar: #f1f5f9; --bg-main: #ffffff; --bg-card: #f8fafc
 /* --- 2. GIAO DIỆN SETTINGS --- */
 .settings-container { 
     display: grid; 
-    grid-template-columns: 1fr 1.5fr; 
+    grid-template-columns: 1fr 1.5fr; /* Cột trái nhỏ hơn cột phải */
     gap: 24px; 
 }
 @media (max-width: 900px) { .settings-container { grid-template-columns: 1fr; } }
 
-.settings-card { 
+/* (ĐÃ SỬA TÊN CLASS CHO KHỚP HTML) */
+.settings-card, .settings-column .settings-card { 
     background: var(--bg-card); 
     padding: 25px; 
     border-radius: 12px; 
     border: 1px solid var(--border); 
     margin-bottom: 20px;
 }
+
 .settings-card h4 { margin-top: 0; margin-bottom: 20px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
 
 /* Form Styles */
@@ -85,25 +87,14 @@ input[type="text"], input[type="password"] {
 }
 input:focus { border-color: var(--primary); background: rgba(0,0,0,0.1); }
 
-/* --- THEME SELECTOR (PHẦN QUAN TRỌNG) --- */
-.theme-selector { 
-    display: flex;         /* BẮT BUỘC: Dàn ngang */
-    gap: 15px;             /* Khoảng cách giữa các ô */
-    flex-wrap: wrap;       /* Tự xuống dòng nếu màn hình quá bé */
-    margin-top: 10px;
-}
-.theme-box { 
-    width: 45px; height: 45px; 
-    border-radius: 10px; cursor: pointer; 
-    border: 2px solid transparent; 
-    transition: 0.2s; 
-}
+/* Theme Selector */
+.theme-selector { display: flex; gap: 15px; }
+.theme-box { width: 45px; height: 45px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
 .theme-box.selected { border-color: #fff; transform: scale(1.1); box-shadow: 0 0 15px var(--primary); }
-/* Màu sắc theme */
 .t-default { background: linear-gradient(135deg, #1e293b, #a855f7); }
-.t-ocean   { background: linear-gradient(135deg, #1e3a8a, #3b82f6); }
-.t-forest  { background: linear-gradient(135deg, #022c22, #22c55e); }
-.t-light   { background: linear-gradient(135deg, #ffffff, #7c3aed); }
+.t-ocean { background: linear-gradient(135deg, #1e3a8a, #3b82f6); }
+.t-forest { background: linear-gradient(135deg, #022c22, #22c55e); }
+.t-light { background: linear-gradient(135deg, #ffffff, #7c3aed); }
 
 /* Buttons */
 .btn-icon { background: var(--primary); border: none; color: white; width: 44px; border-radius: 8px; cursor: pointer; }
@@ -138,13 +129,13 @@ button { cursor: pointer; font-weight: bold; transition: 0.2s; }
 .btn-cancel { padding: 10px 24px; border-radius: 8px; background: transparent; color: #94a3b8; border: 1px solid var(--border); }
 .btn-cancel:hover { color: #fff; border-color: #fff; }
 
-/* --- 4. INPUT SỐ ĐIỆN THOẠI --- */
+/* --- 4. INPUT SỐ ĐIỆN THOẠI (FIX MÀU & AUTOFILL) --- */
 .phone-input-group { display: flex; align-items: center; background-color: #0f172a !important; border: 1px solid #475569; border-radius: 8px; margin: 15px 0; overflow: hidden; position: relative; }
 .phone-input-group:focus-within { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.3); }
 .phone-prefix { padding: 14px 16px; background: rgba(255, 255, 255, 0.05); border-right: 1px solid #475569; color: #e2e8f0; font-weight: bold; display: flex; gap: 8px; white-space: nowrap; }
 .phone-input-group input { flex: 1; border: none !important; outline: none !important; background: transparent !important; color: #ffffff !important; font-size: 16px; padding: 14px; margin: 0; width: 100%; }
 
-/* Fix Autofill */
+/* Fix Autofill: Ép màu nền tối và chữ trắng */
 .phone-input-group input:-webkit-autofill,
 .phone-input-group input:-webkit-autofill:hover, 
 .phone-input-group input:-webkit-autofill:focus, 
@@ -183,7 +174,103 @@ button { cursor: pointer; font-weight: bold; transition: 0.2s; }
 .widget-body { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; position: relative; }
 canvas { width: 100% !important; height: 100% !important; }
 
-/* Security Option */
+/* Security Option (Radio custom) */
 .security-option { display: flex; align-items: center; gap: 15px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
 .security-option:hover { background: rgba(255,255,255,0.05); border-color: var(--primary); }
 .security-option input { width: 18px; height: 18px; accent-color: var(--primary); margin: 0; }
+
+
+/* RESPONSIVE: GIAO DIỆN ĐIỆN THOẠI (Mobile)       
+
+/* Mặc định trên máy tính: Ẩn nút menu và lớp phủ */
+.mobile-menu-btn, .sidebar-overlay {
+    display: none;
+}
+
+/* KHI MÀN HÌNH NHỎ HƠN 768PX (ĐIỆN THOẠI) */
+@media screen and (max-width: 768px) {
+    
+    /* 1. Cho phép cuộn trang dọc (Vì nội dung sẽ dài ra) */
+    body {
+        overflow-y: auto !important;
+        height: auto !important;
+        position: relative;
+    }
+
+    /* 2. Cài đặt nút Menu (3 gạch) */
+    .mobile-menu-btn {
+        display: flex;
+        align-items: center; justify-content: center;
+        position: fixed;
+        top: 15px; left: 15px;
+        width: 45px; height: 45px;
+        background: var(--bg-card); /* Lấy màu theo theme */
+        border: 1px solid var(--border);
+        color: var(--primary);
+        border-radius: 8px;
+        z-index: 2000; /* Cao nhất để luôn bấm được */
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        font-size: 20px;
+    }
+
+    /* 3. Sidebar: Mặc định ẩn sang trái */
+    .sidebar {
+        position: fixed;
+        left: -280px; /* Đẩy ra khỏi màn hình */
+        top: 0; bottom: 0;
+        z-index: 2001; /* Cao hơn nút menu */
+        transition: left 0.3s ease; /* Hiệu ứng trượt */
+        box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+    }
+    
+    /* Khi có class 'show' (do JS thêm vào) thì trượt ra */
+    .sidebar.show {
+        left: 0;
+    }
+
+    /* 4. Lớp phủ đen mờ */
+    .sidebar-overlay {
+        display: none;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.7); /* Đen mờ 70% */
+        z-index: 2000;
+        backdrop-filter: blur(3px);
+    }
+    .sidebar-overlay.show {
+        display: block;
+    }
+
+    /* 5. Nội dung chính: Tràn ra toàn màn hình */
+    .main-content {
+        margin-left: 0 !important; /* Bỏ lề trái */
+        width: 100% !important;
+        padding: 70px 15px 30px 15px; /* Padding top lớn để tránh nút menu */
+        height: auto;
+        overflow: visible;
+    }
+
+    /* 6. Xử lý GridStack (Quan trọng nhất) */
+    /* Ép các Widget thành 1 cột dọc, bỏ vị trí tuyệt đối */
+    .grid-stack-item {
+        position: relative !important;
+        width: 100% !important; /* Chiếm hết chiều ngang */
+        left: auto !important;
+        top: auto !important;
+        margin-bottom: 20px; /* Khoảng cách giữa các widget */
+        height: auto !important; /* Chiều cao tự dãn theo nội dung */
+    }
+    
+    /* Widget bên trong */
+    .grid-stack-item-content {
+        position: relative !important;
+        height: auto !important;
+        min-height: 150px; /* Chiều cao tối thiểu cho đẹp */
+        inset: 0 !important; /* Reset vị trí */
+    }
+
+    /* Vùng chứa grid */
+    .grid-stack {
+        height: auto !important;
+    }
+}
