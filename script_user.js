@@ -58,27 +58,51 @@ initUserApp();
 // --- 3. LOGIC GRID & DASHBOARD (ĐÃ NÂNG CẤP) ---
 
 function initDashboard() {
-    console.log("Khởi tạo Dashboard đa trang...");
-    
-    // 1. Phân loại dữ liệu (Tương thích ngược)
+    console.log("Khởi tạo Dashboard đa trang... (Responsive Mode)");
+
+    // 1. Phân loại dữ liệu (Giữ nguyên logic cũ của bạn)
     let pagesData = { monitor: [], control: [] };
     
     if (myCurrentConfig.widgets) {
-        // Nếu là data cũ (chưa chia trang) -> Gán hết vào Monitor
+        // Data cũ (chưa chia trang) -> Gán hết vào Monitor
         pagesData.monitor = myCurrentConfig.widgets;
     } else if (myCurrentConfig.pages) {
-        // Nếu là data mới
+        // Data mới
         pagesData.monitor = myCurrentConfig.pages.monitor || [];
         pagesData.control = myCurrentConfig.pages.control || [];
     }
 
+    // Kiểm tra kích thước màn hình
+    const isMobile = window.innerWidth < 768;
+
+    const gridOptions = {
+        // Chế độ 'staticGrid: true' nghĩa là User chỉ xem, không kéo thả được
+        staticGrid: true, 
+        margin: 10,
+        float: true,
+
+        // --- ĐIỂM QUAN TRỌNG NHẤT ---
+        // Nếu là Mobile: Dùng 2 cột (để xếp 2 công tắc/hàng)
+        // Nếu là PC: Dùng 12 cột (chuẩn cũ)
+        column: isMobile ? 2 : 12, 
+
+        // Tắt chế độ "tự động về 1 cột" của thư viện
+        // Để ta có thể ép nó hiển thị 2 cột trên mobile
+        disableOneColumnMode: true,
+        
+        // Khóa thao tác chuột/cảm ứng để lướt web mượt hơn
+        disableDrag: true,
+        disableResize: true
+    };
+
     // 2. Khởi tạo Grid Giám Sát (Chế độ 'view')
-    const elMon = document.querySelector('#grid-monitor');
+    const elMon = document.querySelector('#grid-monitor'); // Lưu ý: Hãy chắc chắn HTML ID đúng là grid-monitor
     if (elMon) {
         elMon.innerHTML = ""; 
-        gridMonitor = GridStack.init({ 
-            staticGrid: true, margin: 10, column: 12, disableOneColumnMode: false 
-        }, elMon);
+        // Destroy grid cũ nếu có để tránh lỗi bộ nhớ
+        if (gridMonitor && gridMonitor.el) gridMonitor.destroy(false);
+
+        gridMonitor = GridStack.init(gridOptions, elMon);
         renderWidgetsToGrid(gridMonitor, pagesData.monitor, 'view');
     }
 
@@ -86,14 +110,24 @@ function initDashboard() {
     const elCon = document.querySelector('#grid-control');
     if (elCon) {
         elCon.innerHTML = "";
-        gridControl = GridStack.init({ 
-            staticGrid: true, margin: 10, column: 12, disableOneColumnMode: false 
-        }, elCon);
+        if (gridControl && gridControl.el) gridControl.destroy(false);
+
+        gridControl = GridStack.init(gridOptions, elCon);
         renderWidgetsToGrid(gridControl, pagesData.control, 'control');
     }
 
     // 4. Kết nối MQTT (Chỉ cần gọi 1 lần cho cả app)
     connectMQTT();
+
+    // 5. (Mới) Tự động điều chỉnh khi xoay màn hình hoặc resize cửa sổ
+    // Giúp chuyển đổi mượt mà giữa 2 cột và 12 cột không cần F5
+    window.addEventListener('resize', function() {
+        const isNowMobile = window.innerWidth < 768;
+        const newCol = isNowMobile ? 2 : 12;
+        
+        if (gridMonitor) gridMonitor.column(newCol);
+        if (gridControl) gridControl.column(newCol);
+    });
 }
 
 // Hàm vẽ widget lên lưới cụ thể
