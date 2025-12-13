@@ -1,5 +1,3 @@
-// script_builder.js - BẢN FIX LOGIC GRIDSTACK
-
 const urlParams = new URLSearchParams(window.location.search);
 const targetUserId = urlParams.get('uid');
 const token = localStorage.getItem('accessToken');
@@ -51,19 +49,20 @@ init();
 
 // 2. LOAD WIDGET CŨ LÊN LƯỚI
 function loadWidgetsToGrid(widgets) {
-    // Xóa hết widget cũ (nếu có)
     grid.removeAll();
+    widgetConfigs = {}; // Reset bộ nhớ tạm
 
     widgets.forEach(w => {
-        // Tạo nội dung HTML cho Card
-        const contentHTML = getWidgetContent(w.type, w.id);
+        // w.config là object { label, key } lưu trong DB
+        widgetConfigs[w.id] = w.config || {}; 
+
+        const contentHTML = getWidgetContent(w.type, w.id, w.config);
         
-        // Thêm vào lưới
         grid.addWidget({
-            x: w.x, y: w.y, w: w.w, h: w.h, // Tọa độ và kích thước
+            x: w.x, y: w.y, w: w.w, h: w.h,
             content: contentHTML,
-            id: w.id,   // ID riêng
-            type: w.type // Loại widget (để lưu lại sau này)
+            id: w.id,
+            type: w.type 
         });
     });
 }
@@ -93,19 +92,25 @@ function addWidgetToGrid(type) {
 }
 
 // 4. HTML NỘI DUNG CARD (DEMO CHO ADMIN)
-function getWidgetContent(type, id) {
-    let icon = 'cube', label = 'Widget', color = '#a855f7';
+function getWidgetContent(type, id, config = {}) {
+    // config là tham số mới chứa label, key...
+    let icon = 'cube', defaultLabel = 'Widget', color = '#a855f7';
 
-    if (type === 'temp')   { icon = 'thermometer-half'; label = 'Nhiệt độ'; color='#f87171'; }
-    if (type === 'switch') { icon = 'toggle-on'; label = 'Công tắc'; color='#4ade80'; }
-    if (type === 'camera') { icon = 'video'; label = 'Camera'; color='#60a5fa'; }
+    if (type === 'temp')   { icon = 'thermometer-half'; defaultLabel = 'Nhiệt độ'; color='#f87171'; }
+    if (type === 'switch') { icon = 'toggle-on'; defaultLabel = 'Công tắc'; color='#4ade80'; }
+    if (type === 'camera') { icon = 'video'; defaultLabel = 'Camera'; color='#60a5fa'; }
 
-    // Nút xóa + Icon + Tên
+    // Ưu tiên dùng label người dùng đã cấu hình, nếu không thì dùng mặc định
+    const displayLabel = config.label || defaultLabel;
+    const dataKey = config.key || "Chưa cấu hình";
+
     return `
         <div class="delete-widget-btn" onclick="removeWidget(this)"><i class="fas fa-times"></i></div>
+        <div class="config-widget-btn" onclick="openConfigModal('${id}')"><i class="fas fa-cog"></i></div>
+        
         <i class="fas fa-${icon}" style="font-size:32px; color:${color}; margin-bottom:10px;"></i>
-        <h4 style="margin:0; color:#fff; font-weight:600;">${label}</h4>
-        <small style="color:#94a3b8; margin-top:4px;">${type.toUpperCase()}</small>
+        <h4 id="lbl-${id}" style="margin:0; color:#fff; font-weight:600;">${displayLabel}</h4>
+        <small style="color:#94a3b8; margin-top:4px;">KEY: <span id="key-${id}">${dataKey}</span></small>
     `;
 }
 
@@ -118,21 +123,22 @@ window.removeWidget = function(el) {
 
 // 6. LƯU CẤU HÌNH (QUAN TRỌNG)
 async function saveDashboard() {
-    // Lấy danh sách các node hiện tại trên lưới
-    // Gridstack lưu thông tin trong grid.engine.nodes hoặc qua phương thức save()
     const items = [];
     
     grid.getGridItems().forEach(item => {
-        // item là DOM element, gridstackNode chứa data
         const node = item.gridstackNode;
         if(node) {
+            // Lấy config từ bộ nhớ tạm widgetConfigs
+            const conf = widgetConfigs[node.id] || {};
+
             items.push({
                 id: node.id,
-                type: node.type || 'unknown', // Lấy type ta đã gán lúc add
+                type: node.type,
                 x: node.x,
                 y: node.y,
                 w: node.w,
-                h: node.h
+                h: node.h,
+                config: conf // <--- QUAN TRỌNG: Lưu thêm cái này
             });
         }
     });
@@ -157,5 +163,45 @@ async function saveDashboard() {
 
 function toggleDrawer() {
     document.getElementById('widgetDrawer').classList.toggle('open');
+}
 
+// Biến tạm lưu cấu hình của các widget (để khi mở modal load lại được)
+let widgetConfigs = {}; 
+
+function openConfigModal(id) {
+    // Tìm widget trên lưới để lấy thông tin hiện tại
+    const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+    if(!el) return;
+
+    // Lấy config hiện tại từ bộ nhớ tạm hoặc mặc định
+    const currentConf = widgetConfigs[id] || { label: '', key: '' };
+
+    // Điền vào form
+    document.getElementById('cfgWidgetId').value = id;
+    document.getElementById('cfgLabel').value = currentConf.label;
+    document.getElementById('cfgKey').value = currentConf.key;
+
+    // Hiện modal
+    document.getElementById('configModal').classList.add('active');
+}
+
+function closeConfigModal() {
+    document.getElementById('configModal').classList.remove('active');
+}
+
+function saveWidgetConfig() {
+    const id = document.getElementById('cfgWidgetId').value;
+    const label = document.getElementById('cfgLabel').value;
+    const key = document.getElementById('cfgKey').value;
+
+    // 1. Lưu vào bộ nhớ tạm
+    widgetConfigs[id] = { label, key };
+
+    // 2. Cập nhật giao diện ngay lập tức (DOM)
+    const lbl = document.getElementById(`lbl-${id}`);
+    const keySpan = document.getElementById(`key-${id}`);
+    if(lbl) lbl.innerText = label;
+    if(keySpan) keySpan.innerText = key;
+
+    closeConfigModal();
 }
