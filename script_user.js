@@ -516,25 +516,36 @@ function showToast(message, type = 'success') {
     box.appendChild(toast); setTimeout(() => toast.remove(), 3000);
 }
 
-// --- LOGIC CHO MENU MOBILE ---
+// ============================================================
+// LOGIC MENU MOBILE (TOGGLE & AUTO CLOSE)
+// ============================================================
 
 function toggleMobileSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.querySelector('.sidebar-overlay');
     
-    // Thêm hoặc bỏ class 'show' để kích hoạt CSS
-    sidebar.classList.toggle('show');
-    overlay.classList.toggle('show');
+    if (sidebar && overlay) {
+        // Thêm hoặc bỏ class 'show' để kích hoạt CSS transform
+        sidebar.classList.toggle('show');
+        overlay.classList.toggle('show');
+    }
 }
 
-// Tự động đóng Sidebar khi bấm vào một mục menu (UX tốt hơn)
+// Tự động đóng Sidebar khi bấm vào một mục menu
 document.addEventListener("DOMContentLoaded", function() {
+    // Tìm tất cả các thẻ li trong sidebar
     const menuItems = document.querySelectorAll('.sidebar ul li');
+    
     menuItems.forEach(item => {
         item.addEventListener('click', () => {
-            // Chỉ đóng nếu đang ở giao diện mobile
+            // Chỉ đóng nếu đang ở giao diện mobile (màn hình nhỏ)
             if (window.innerWidth <= 768) {
-                toggleMobileSidebar();
+                // Gọi lại hàm toggle để đóng (remove class 'show')
+                const sidebar = document.querySelector('.sidebar');
+                // Kiểm tra nếu đang mở thì mới đóng
+                if (sidebar.classList.contains('show')) {
+                    toggleMobileSidebar();
+                }
             }
         });
     });
