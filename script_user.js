@@ -288,49 +288,60 @@ function showToast(message, type = 'success') {
 
 // --- 8. PHẦN RENDER DASHBOARD (QUAN TRỌNG: VẼ GIAO DIỆN TỪ CONFIG) ---
 // --- HÀM VẼ GIAO DIỆN (QUAN TRỌNG) ---
+
 function initMonitorPage() {
     const monitorSection = document.querySelector('#monitor');
     
-    // 1. Reset vùng chứa
+    // 1. Reset vùng chứa và hiển thị tiêu đề
     monitorSection.innerHTML = `<h3>Giám sát hệ thống</h3><div class="grid-stack"></div>`;
     
-    // 2. Kiểm tra dữ liệu
+    // 2. Kiểm tra dữ liệu cấu hình
     if (!myCurrentConfig.widgets || myCurrentConfig.widgets.length === 0) {
-        monitorSection.innerHTML += `<p style="color:#ccc; text-align:center; margin-top:50px">Chưa có thiết bị nào. Vui lòng liên hệ Admin.</p>`;
+        monitorSection.innerHTML += `<p style="color:#ccc; text-align:center; margin-top:50px">Chưa có thiết bị nào. Vui lòng liên hệ Admin (Builder) để lưu cấu hình.</p>`;
         return;
     }
 
-    // 3. Khởi tạo Gridstack (CHẾ ĐỘ CHỈ XEM)
-    const grid = GridStack.init({
-        staticGrid: true, // Khóa kéo thả (User không được sửa)
-        column: 12,       // 12 cột (Chuẩn Desktop)
-        cellHeight: 100,  // Chiều cao cơ sở
-        margin: 10,       // Khoảng cách
-        disableOneColumnMode: false // Trên điện thoại tự động về 1 cột (Responsive)
+    // 3. Khởi tạo Gridstack (Lưới giao diện)
+    grid = GridStack.init({
+        staticGrid: true, // User không được kéo thả
+        column: 12,
+        cellHeight: 100,
+        margin: 10,
+        disableOneColumnMode: false
     }, document.querySelector('.grid-stack'));
 
-    // 4. Duyệt qua từng Widget và vẽ lên lưới
+    // 4. Duyệt qua từng Widget để vẽ lên màn hình
     myCurrentConfig.widgets.forEach(w => {
+        // --- A. Lấy Topic MQTT từ cấu hình (Admin nhập) ---
+        const topic = w.config ? w.config.key : ""; // Lấy topic, ví dụ: "aquarium/temp"
         
-        // Giả sử config lưu dạng { label: "...", key: "hieu/aquarium/temp" }
-        const topic = w.config ? w.config.key : "";
-        
-        // Lưu vào bản đồ: Topic này thuộc về Widget ID nào?
+        // Lưu vào bản đồ topicMap để khi có tin nhắn MQTT thì biết update cho widget nào
         if (topic) {
             if (!topicMap[topic]) topicMap[topic] = [];
             topicMap[topic].push(w.id);
         }
-        // -----------------------------------------------------------------------
 
+        // --- B. Tạo HTML và Thêm vào lưới (QUAN TRỌNG: Không được xóa đoạn này) ---
         const contentHTML = generateWidgetContent(w);
-        grid.addWidget({ x: w.x, y: w.y, w: w.w, h: w.h, content: contentHTML, id: w.id });
+        
+        grid.addWidget({
+            x: w.x, y: w.y, w: w.w, h: w.h,
+            content: contentHTML,
+            id: w.id
+        });
 
+        // --- C. Vẽ biểu đồ nếu là widget chart/temp ---
         if (w.type === 'chart' || w.type === 'temp') {
-            // Truyền thêm topic để hiển thị nếu cần
             renderChart(w.id, w.dataType);
         }
     });
-    connectMQTT(); 
+
+    // 5. Sau khi vẽ xong giao diện thì mới kết nối MQTT
+    if (typeof connectMQTT === 'function') {
+        connectMQTT();
+    } else {
+        console.warn("Chưa có hàm connectMQTT, vui lòng thêm vào script_user.js");
+    }
 }
 
 // Hàm tạo HTML nội dung Card
@@ -465,7 +476,7 @@ function connectMQTT() {
     });
 
     mqttClient.on('connect', () => {
-        console.log("✅ MQTT Connected!");
+        console.log(" MQTT Connected!");
         showToast("Đã kết nối Server", "success");
         
         // Đăng ký (Subscribe) tất cả các topic có trong Config
