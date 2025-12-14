@@ -1,4 +1,4 @@
-// script_builder.js 
+// script_builder.js - PHIÊN BẢN CẬP NHẬT HỖ TRỢ CAMERA STREAM & 2 TAB
 
 const urlParams = new URLSearchParams(window.location.search);
 const targetUserId = urlParams.get('uid');
@@ -12,7 +12,7 @@ let currentTab = 'monitor'; // Trang hiện tại đang sửa (monitor hoặc co
 let dashboardConfig = { 
     monitor: [], 
     control: [] 
-}; // Biến lưu trữ toàn bộ cấu hình của cả 2 trang
+}; 
 
 // Biến tạm lưu config của từng widget (Label, Topic...)
 let widgetConfigs = {}; 
@@ -69,7 +69,7 @@ init();
 // 2. LOGIC CHUYỂN TAB (GIÁM SÁT <-> ĐIỀU KHIỂN)
 // ============================================================
 function switchEditMode(mode) {
-    if (currentTab === mode) return; // Đang ở trang đó rồi thì không làm gì
+    if (currentTab === mode) return; 
 
     // B1: Lưu hiện trạng của trang cũ vào biến nhớ (dashboardConfig)
     saveCurrentGridToMem();
@@ -85,7 +85,7 @@ function switchEditMode(mode) {
     loadItemsToGrid(itemsToLoad);
 }
 
-// Cập nhật giao diện nút bấm (Màu tím cho trang đang chọn)
+// Cập nhật giao diện nút bấm
 function updateTabUI() {
     const btnMon = document.getElementById('btnTabMonitor');
     const btnCon = document.getElementById('btnTabControl');
@@ -115,11 +115,10 @@ function updateTabUI() {
 // 3. QUẢN LÝ WIDGET (THÊM / XÓA / LOAD)
 // ============================================================
 
-// Hàm load danh sách widget lên lưới
 function loadItemsToGrid(items) {
     if (!items) return;
     items.forEach(w => {
-        // Khôi phục config vào bộ nhớ tạm để Modal dùng được
+        // Khôi phục config vào bộ nhớ tạm
         widgetConfigs[w.id] = w.config || {}; 
 
         const contentHTML = getWidgetContent(w.type, w.id, w.config);
@@ -128,12 +127,11 @@ function loadItemsToGrid(items) {
             x: w.x, y: w.y, w: w.w, h: w.h,
             content: contentHTML,
             id: w.id,
-            type: w.type // Lưu loại widget vào node
+            type: w.type // Lưu loại widget vào node để truy xuất sau này
         });
     });
 }
 
-// Hàm thêm Widget mới từ Drawer
 function addWidgetToGrid(type) {
     let w = 3, h = 2;
     if (type === 'switch') { w = 2; h = 1; }
@@ -147,14 +145,13 @@ function addWidgetToGrid(type) {
         w: w, h: h,
         content: contentHTML,
         id: id,
-        type: type, // Lưu type
+        type: type, // Quan trọng: Lưu type để openConfigModal biết
         autoPosition: true 
     });
     
     toggleDrawer();
 }
 
-// Tạo nội dung HTML cho thẻ
 function getWidgetContent(type, id, config = {}) {
     let icon = 'cube', defaultLabel = 'Widget', color = '#a855f7';
 
@@ -163,9 +160,13 @@ function getWidgetContent(type, id, config = {}) {
     if (type === 'camera') { icon = 'video'; defaultLabel = 'Camera'; color='#60a5fa'; }
 
     const displayLabel = config.label || defaultLabel;
-    const dataKey = config.key || "Chưa cấu hình";
+    
+    // Nếu là Camera thì hiển thị URL cắt ngắn, còn lại hiển thị Topic
+    let dataKey = config.key || "Chưa cấu hình";
+    if (type === 'camera' && config.key && config.key.length > 20) {
+        dataKey = "URL: " + config.key.substring(0, 15) + "...";
+    }
 
-    // Thêm data-type vào div để dễ truy xuất nếu cần
     return `
         <div class="delete-widget-btn" onclick="removeWidget(this)"><i class="fas fa-times"></i></div>
         <div class="config-widget-btn" onclick="openConfigModal('${id}')"><i class="fas fa-cog"></i></div>
@@ -176,7 +177,6 @@ function getWidgetContent(type, id, config = {}) {
     `;
 }
 
-// Xóa Widget
 window.removeWidget = function(el) {
     const item = el.closest('.grid-stack-item');
     grid.removeWidget(item);
@@ -186,37 +186,30 @@ window.removeWidget = function(el) {
 // 4. LƯU DỮ LIỆU (SAVE)
 // ============================================================
 
-// Hàm gom dữ liệu hiện tại trên lưới vào biến dashboardConfig
 function saveCurrentGridToMem() {
     const items = [];
     grid.getGridItems().forEach(item => {
         const node = item.gridstackNode;
         if(node) {
-            // Lấy config từ bộ nhớ tạm
             const conf = widgetConfigs[node.id] || {};
             items.push({
                 id: node.id,
-                type: node.type, // Lấy từ thuộc tính node.type đã gán lúc addWidget
+                type: node.type, 
                 x: node.x, y: node.y, w: node.w, h: node.h,
                 config: conf
             });
         }
     });
 
-    // Lưu vào đúng nhánh (monitor hoặc control)
     if (currentTab === 'monitor') dashboardConfig.monitor = items;
     else dashboardConfig.control = items;
 }
 
-// Lưu lên Server
 async function saveDashboard() {
-    // 1. Lưu trang hiện tại vào bộ nhớ trước đã
     saveCurrentGridToMem();
-
-    // 2. Tạo payload theo cấu trúc mới { pages: ... }
     const payload = { 
         ui_config: JSON.stringify({ 
-            pages: dashboardConfig // Lưu cả 2 trang
+            pages: dashboardConfig 
         }) 
     };
 
@@ -243,15 +236,42 @@ function toggleDrawer() {
     document.getElementById('widgetDrawer').classList.toggle('open');
 }
 
+// --- [UPDATED] HÀM MỞ MODAL VỚI LOGIC CAMERA STREAM ---
 function openConfigModal(id) {
+    // Tìm element grid stack item thông qua gs-id
     const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
     if(!el) return;
 
+    // Lấy thông tin type từ Node của GridStack
+    // Lưu ý: node.type đã được lưu lúc gọi addWidgetToGrid
+    const type = el.gridstackNode.type || 'text'; 
     const currentConf = widgetConfigs[id] || { label: '', key: '' };
 
+    // Set giá trị cho các input
     document.getElementById('cfgWidgetId').value = id;
+    document.getElementById('cfgWidgetType').value = type; // Cần thiết để lưu lại
     document.getElementById('cfgLabel').value = currentConf.label;
     document.getElementById('cfgKey').value = currentConf.key;
+
+    // --- LOGIC THAY ĐỔI GIAO DIỆN MODAL DỰA VÀO TYPE ---
+    const lblKey = document.getElementById('lblConfigKey');
+    const hintKey = document.getElementById('hintConfigKey');
+    const inpKey = document.getElementById('cfgKey');
+
+    // Nếu các ID này chưa tồn tại trong HTML (bạn chưa sửa file html), code sẽ bỏ qua để tránh lỗi
+    if (lblKey && hintKey && inpKey) {
+        if (type === 'camera') {
+            lblKey.innerText = "Đường dẫn Stream (URL HTTPS):";
+            inpKey.placeholder = "Vd: https://camera.ngrok-free.app/stream";
+            hintKey.innerText = "Nhập đường dẫn Proxy (Ngrok/Cloudflare) để xem video.";
+        } else {
+            lblKey.innerText = "Mã dữ liệu / Topic MQTT:";
+            inpKey.placeholder = "Vd: aquarium/temp_sensor";
+            hintKey.innerText = "Topic MQTT dùng để gửi hoặc nhận dữ liệu.";
+        }
+    }
+    // ----------------------------------------------------
+
     document.getElementById('configModal').classList.add('active');
 }
 
@@ -267,11 +287,19 @@ function saveWidgetConfig() {
     // Lưu vào bộ nhớ tạm
     widgetConfigs[id] = { label, key };
 
-    // Cập nhật hiển thị ngay lập tức
+    // Cập nhật hiển thị ngay lập tức (UI Preview trên Grid)
     const lbl = document.getElementById(`lbl-${id}`);
     const keySpan = document.getElementById(`key-${id}`);
     if(lbl) lbl.innerText = label;
-    if(keySpan) keySpan.innerText = key;
+    
+    // Nếu key quá dài (như URL), cắt bớt khi hiển thị preview
+    if(keySpan) {
+        if (key.startsWith('http') && key.length > 20) {
+            keySpan.innerText = "URL: " + key.substring(0, 15) + "...";
+        } else {
+            keySpan.innerText = key;
+        }
+    }
 
     closeConfigModal();
 }
