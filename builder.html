@@ -2,8 +2,8 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
+  
   <title>Thiết kế Giao diện</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   
@@ -68,29 +68,30 @@
       </div>
   </div>
 
-  <div id="configModal" class="modal-overlay">
+<div id="configModal" class="modal-overlay">
     <div class="modal-box">
         <h3>Cấu hình Widget</h3>
         
         <div class="form-group">
-        <label>Tên hiển thị (Label):</label>
-        <input type="text" id="cfgLabel" placeholder="Vd: Nhiệt độ Bể 1">
+            <label>Tên hiển thị (Label):</label>
+            <input type="text" id="cfgLabel" placeholder="Vd: Nhiệt độ Bể 1">
         </div>
 
         <div class="form-group">
-        <label>Mã dữ liệu / Topic MQTT:</label>
-        <input type="text" id="cfgKey" placeholder="Vd: temp_sensor_01">
-        <small>Định danh để code user biết lấy dữ liệu gì.</small>
+            <label id="lblConfigKey">Mã dữ liệu / Topic MQTT:</label>
+            <input type="text" id="cfgKey" placeholder="Vd: temp_sensor_01">
+            <small id="hintConfigKey">Định danh để code user biết lấy dữ liệu gì.</small>
         </div>
-
+        
+        <input type="hidden" id="cfgWidgetType">
         <input type="hidden" id="cfgWidgetId">
 
-        <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeConfigModal()">Hủy</button>
-        <button class="btn-save-modal" onclick="saveWidgetConfig()">Lưu thay đổi</button>
+        <div class="modal-buttons">
+            <button class="btn-cancel" onclick="closeConfigModal()">Hủy</button>
+            <button class="btn-save" onclick="saveWidgetConfig()">Lưu</button>
         </div>
     </div>
-  </div>
+</div>
 
   <script src="script_builder.js"></script>
 </body>
