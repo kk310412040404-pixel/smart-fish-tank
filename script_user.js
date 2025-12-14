@@ -203,32 +203,10 @@ function generateWidgetContent(w, mode) {
     }
     else if (w.type === 'camera') {
         icon = 'video'; color = '#60a5fa';
-        
-        // Kiểm tra xem Key nhập vào là URL (http) hay Topic
-        const isUrl = key.startsWith('http'); 
-        
-        // Nếu là URL: gán luôn vào src.
-        // Nếu là Topic: để src rỗng, đợi MQTT bắn Base64 vào.
-        const srcAttr = isUrl ? `src="${key}"` : '';
-        const displayStyle = isUrl ? 'block' : 'none'; // Nếu là URL thì hiện luôn, Topic thì ẩn chờ data
-
         inner = `
-            <div class="widget-body" style="background:black; position:relative; width:100%; height:100%; overflow:hidden; border-radius:8px; display:flex; align-items:center; justify-content:center;">
-                
-                <span style="position:absolute; top:8px; right:8px; background:red; color:white; font-size:10px; padding:2px 6px; border-radius:4px; z-index:10; font-weight:bold; animation:blink 1s infinite;">LIVE</span>
-                
-                <img id="cam_${w.id}" 
-                     data-topic="${!isUrl ? key : ''}"
-                     ${srcAttr}
-                     style="width:100%; height:100%; object-fit:cover; display:${displayStyle};"
-                     onerror="this.style.display='none'; document.getElementById('err_${w.id}').style.display='flex';"
-                     onload="this.style.display='block'; document.getElementById('err_${w.id}').style.display='none';"
-                >
-
-                <div id="err_${w.id}" style="display:${isUrl ? 'none' : 'flex'}; flex-direction:column; align-items:center; color:rgba(255,255,255,0.5);">
-                    <i class="fas fa-video-slash" style="font-size:30px; margin-bottom:5px;"></i>
-                    <span style="font-size:10px;">${isUrl ? 'Mất kết nối Stream' : 'Chờ tín hiệu MQTT...'}</span>
-                </div>
+            <div class="widget-body" style="background:black; position:relative; width:100%; height:100%; overflow:hidden; border-radius:8px;">
+                <span style="position:absolute; top:5px; right:5px; background:red; color:white; font-size:10px; padding:2px 5px; border-radius:3px; animation:blink 1s infinite;">LIVE</span>
+                <i class="fas fa-play-circle" style="font-size:40px; color:rgba(255,255,255,0.5)"></i>
             </div>
         `;
     }
@@ -572,3 +550,4 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 });
+
