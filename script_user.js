@@ -1,4 +1,4 @@
-// script_user.js 
+// script_user.js - PHIÊN BẢN USER ĐÃ CẬP NHẬT CAMERA STREAM
 
 // 1. KIỂM TRA ĐĂNG NHẬP
 const token = localStorage.getItem('accessToken');
@@ -20,7 +20,7 @@ const MQTT_CONFIG = {
 };
 
 let mqttClient = null;
-// Thay đổi: Dùng 2 lưới riêng biệt
+// Dùng 2 lưới riêng biệt cho Monitor và Control
 let gridMonitor = null;     
 let gridControl = null;     
 let chartInstances = {};    
@@ -43,7 +43,7 @@ async function initUserApp() {
             // b. Điền thông tin Settings
             fillMySettings();
 
-            // c. Khởi tạo Dashboard (Hàm mới)
+            // c. Khởi tạo Dashboard
             if (typeof initDashboard === 'function') initDashboard();
 
         } else {
@@ -55,12 +55,12 @@ async function initUserApp() {
 
 initUserApp(); 
 
-// --- 3. LOGIC GRID & DASHBOARD (ĐÃ NÂNG CẤP) ---
+// --- 3. LOGIC GRID & DASHBOARD ---
 
 function initDashboard() {
     console.log("Khởi tạo Dashboard đa trang... (Responsive Mode)");
 
-    // 1. Phân loại dữ liệu (Giữ nguyên logic cũ của bạn)
+    // 1. Phân loại dữ liệu
     let pagesData = { monitor: [], control: [] };
     
     if (myCurrentConfig.widgets) {
@@ -78,30 +78,21 @@ function initDashboard() {
     const gridOptions = {
         staticGrid: true, // Người dùng không kéo thả được
         float: true,
-        
-        // --- QUAN TRỌNG: KHOẢNG CÁCH GIỮA CÁC WIDGET ---
-        margin: 10, // Khoảng cách (gap) là 15px (bạn có thể tăng/giảm số này)
-        // Mobile: 1 ô cao 85px (Gọn hơn)
-        // PC: 1 ô cao 110px (Thoáng hơn)
+        margin: 10,
+        // Mobile: 1 ô cao 85px, PC: 1 ô cao 110px
         cellHeight: isMobile ? 85 : 110,
-
-        // --- QUAN TRỌNG: CẤU HÌNH CỘT ---
-        // Mobile: 1 cột (Widget sẽ tự giãn max width)
-        // PC: 12 cột (Giữ nguyên bố cục cũ)
+        // Mobile: 1 cột, PC: 12 cột
         column: isMobile ? 1 : 12, 
-
-        disableOneColumnMode: true, // Để ta tự kiểm soát cột bằng logic bên trên
+        disableOneColumnMode: true, 
         disableDrag: true,
         disableResize: true
     };
 
     // 2. Khởi tạo Grid Giám Sát (Chế độ 'view')
-    const elMon = document.querySelector('#grid-monitor'); // Lưu ý: Hãy chắc chắn HTML ID đúng là grid-monitor
+    const elMon = document.querySelector('#grid-monitor'); 
     if (elMon) {
         elMon.innerHTML = ""; 
-        // Destroy grid cũ nếu có để tránh lỗi bộ nhớ
         if (gridMonitor && gridMonitor.el) gridMonitor.destroy(false);
-
         gridMonitor = GridStack.init(gridOptions, elMon);
         renderWidgetsToGrid(gridMonitor, pagesData.monitor, 'view');
     }
@@ -111,19 +102,17 @@ function initDashboard() {
     if (elCon) {
         elCon.innerHTML = "";
         if (gridControl && gridControl.el) gridControl.destroy(false);
-
         gridControl = GridStack.init(gridOptions, elCon);
         renderWidgetsToGrid(gridControl, pagesData.control, 'control');
     }
 
-    // 4. Kết nối MQTT (Chỉ cần gọi 1 lần cho cả app)
+    // 4. Kết nối MQTT
     connectMQTT();
 
-    // 5. (Mới) Tự động điều chỉnh khi xoay màn hình hoặc resize cửa sổ
-    // Giúp chuyển đổi mượt mà giữa 2 cột và 12 cột không cần F5
+    // 5. Tự động điều chỉnh layout khi resize
     window.addEventListener('resize', function() {
         const isNowMobile = window.innerWidth < 768;
-        const newCol = isNowMobile ? 2 : 12;
+        const newCol = isNowMobile ? 1 : 12; // Lưu ý: Mobile nên để 1 cột cho đẹp
         
         if (gridMonitor) gridMonitor.column(newCol);
         if (gridControl) gridControl.column(newCol);
@@ -135,17 +124,20 @@ function renderWidgetsToGrid(gridInstance, widgets, mode) {
     if (!widgets) return;
 
     widgets.forEach(w => {
-        // Đăng ký Topic vào Map để nhận MQTT
-        const topic = w.config ? w.config.key : ""; 
-        if (topic) {
-            if (!topicMap[topic]) topicMap[topic] = [];
-            // Tránh trùng lặp ID trong map nếu widget xuất hiện ở cả 2 tab (hiếm nhưng có thể)
-            if (!topicMap[topic].includes(w.id)) {
-                topicMap[topic].push(w.id);
+        // [CẬP NHẬT QUAN TRỌNG] Logic đăng ký Topic MQTT
+        // Chỉ đăng ký nếu CÓ key VÀ widget KHÔNG PHẢI là camera
+        // (Vì key của Camera là URL, không phải Topic MQTT)
+        const keyData = w.config ? w.config.key : ""; 
+        
+        if (keyData && w.type !== 'camera') {
+            if (!topicMap[keyData]) topicMap[keyData] = [];
+            // Tránh trùng lặp ID
+            if (!topicMap[keyData].includes(w.id)) {
+                topicMap[keyData].push(w.id);
             }
         }
 
-        // Tạo HTML: 'view' (chỉ xem) hoặc 'control' (bấm được)
+        // Tạo HTML: 'view' hoặc 'control'
         const html = generateWidgetContent(w, mode);
         
         gridInstance.addWidget({
@@ -154,14 +146,14 @@ function renderWidgetsToGrid(gridInstance, widgets, mode) {
             id: w.id
         });
 
-        // Vẽ biểu đồ nếu là widget chart/temp (thường chỉ ở tab View)
+        // Vẽ biểu đồ sau khi widget đã thêm vào DOM
         if (w.type === 'chart' || w.type === 'temp') {
             renderChart(w.id, w.dataType);
         }
     });
 }
 
-// Hàm tạo HTML nội dung Card (Xử lý giao diện 2 chế độ)
+// Hàm tạo HTML nội dung Card (Đã cập nhật cho Camera Stream)
 function generateWidgetContent(w, mode) {
     let inner = '';
     let icon = 'cube';
@@ -169,13 +161,14 @@ function generateWidgetContent(w, mode) {
     
     // Lấy tên hiển thị
     const label = w.config && w.config.label ? w.config.label : (w.title || 'Widget');
+    const keyData = w.config && w.config.key ? w.config.key : '';
 
-    // === 1. LOGIC SWITCH (QUAN TRỌNG) ===
+    // === 1. LOGIC SWITCH ===
     if (w.type === 'switch') {
         icon = 'toggle-on'; color = '#4ade80';
         
         if (mode === 'control') {
-            // [TRANG ĐIỀU KHIỂN]: Nút bấm to, click được
+            // [TRANG ĐIỀU KHIỂN]: Nút bấm to
             inner = `
                 <div class="widget-body" style="flex-direction:column;">
                     <i class="fas fa-power-off btn-switch" 
@@ -185,7 +178,7 @@ function generateWidgetContent(w, mode) {
                 </div>
             `;
         } else {
-            // [TRANG GIÁM SÁT]: Đèn báo trạng thái, KHÔNG click
+            // [TRANG GIÁM SÁT]: Đèn báo
             inner = `
                 <div class="widget-body" style="flex-direction:row; gap:15px;">
                     <div class="status-indicator" style="width:20px; height:20px; border-radius:50%; background:#ef4444; box-shadow:0 0 5px #ef4444; transition:0.3s;"></div>
@@ -196,19 +189,37 @@ function generateWidgetContent(w, mode) {
         }
     }
     
-    // === 2. CÁC LOẠI KHÁC ===
+    // === 2. CAMERA (STREAM VIDEO) ===
+    else if (w.type === 'camera') {
+        icon = 'video'; color = '#60a5fa';
+        // keyData bây giờ chứa URL Stream (https://...)
+        
+        inner = `
+            <div class="widget-body" style="background:black; position:relative; width:100%; height:100%; overflow:hidden; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                
+                ${keyData 
+                    ? `<img src="${keyData}" 
+                            style="width:100%; height:100%; object-fit:contain;" 
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'" 
+                       />` 
+                    : '' 
+                }
+
+                <div style="position:absolute; inset:0; display:${keyData ? 'none' : 'flex'}; 
+                            flex-direction:column; justify-content:center; align-items:center; color:#64748b;">
+                    <i class="fas fa-video-slash" style="font-size:30px; margin-bottom:10px; color:#ef4444;"></i>
+                    <span style="font-size:11px;">${keyData ? 'Mất tín hiệu' : 'Chưa cấu hình URL'}</span>
+                </div>
+
+                <span style="position:absolute; top:5px; right:5px; background:red; color:white; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; opacity:0.8;">LIVE</span>
+            </div>
+        `;
+    }
+
+    // === 3. NHIỆT ĐỘ / BIỂU ĐỒ ===
     else if (w.type === 'temp') {
         icon = 'thermometer-half'; color = '#f87171';
         inner = `<div class="widget-body"><canvas id="chart_${w.id}"></canvas></div>`;
-    }
-    else if (w.type === 'camera') {
-        icon = 'video'; color = '#60a5fa';
-        inner = `
-            <div class="widget-body" style="background:black; position:relative; width:100%; height:100%; overflow:hidden; border-radius:8px;">
-                <span style="position:absolute; top:5px; right:5px; background:red; color:white; font-size:10px; padding:2px 5px; border-radius:3px; animation:blink 1s infinite;">LIVE</span>
-                <i class="fas fa-play-circle" style="font-size:40px; color:rgba(255,255,255,0.5)"></i>
-            </div>
-        `;
     }
 
     return `
@@ -261,6 +272,7 @@ function connectMQTT() {
     mqttClient.on('connect', () => {
         console.log("✅ MQTT Connected!");
         showToast("Đã kết nối Server", "success");
+        // Subscribe các topic đã lọc (loại bỏ url camera)
         for (const topic in topicMap) {
             mqttClient.subscribe(topic);
         }
@@ -268,7 +280,6 @@ function connectMQTT() {
 
     mqttClient.on('message', (topic, payload) => {
         const msgString = payload.toString();
-        // Tìm xem Topic này thuộc về những Widget ID nào
         if (topicMap[topic]) {
             topicMap[topic].forEach(widgetId => {
                 updateWidgetVal(widgetId, msgString);
@@ -277,9 +288,9 @@ function connectMQTT() {
     });
 }
 
-// Hàm cập nhật giao diện (Đồng bộ cả Tab Monitor & Control)
+// Hàm cập nhật giao diện
 function updateWidgetVal(id, value) {
-    // 1. Chart (Nếu có)
+    // 1. Chart
     if (chartInstances[id]) {
         const chart = chartInstances[id];
         const now = new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
@@ -293,28 +304,21 @@ function updateWidgetVal(id, value) {
         chart.update();
     }
     
-    // 2. Switch (Cập nhật cho TẤT CẢ widget có cùng ID trên màn hình)
-    // Lưu ý: Có thể widget này xuất hiện ở cả 2 tab (nếu admin cấu hình vậy), hoặc chỉ 1.
-    // Chúng ta dùng querySelectorAll để bắt hết.
+    // 2. Switch
     const widgetEls = document.querySelectorAll(`.widget-content[gs-id="${id}"]`);
-    
     widgetEls.forEach(el => {
         const type = el.getAttribute('data-type');
         if (type === 'switch') {
-            // Chuẩn hóa giá trị ON/OFF
             const isOn = (value.toUpperCase() === "ON" || value == "1");
 
-            // a. Cập nhật Chữ
             const statusText = el.querySelector('.status-text');
             if (statusText) statusText.innerText = isOn ? "ON" : "OFF";
 
-            // b. Cập nhật Nút bấm (Ở Tab Control)
             const btnIcon = el.querySelector('.btn-switch');
             if (btnIcon) {
                 btnIcon.style.color = isOn ? "#4ade80" : "#ef4444";
             }
 
-            // c. Cập nhật Đèn báo (Ở Tab Monitor)
             const indicator = el.querySelector('.status-indicator');
             if (indicator) {
                 indicator.style.background = isOn ? "#4ade80" : "#ef4444";
@@ -324,9 +328,8 @@ function updateWidgetVal(id, value) {
     });
 }
 
-// Gửi lệnh điều khiển
+// Gửi lệnh điều khiển (Chỉ cho switch)
 function toggleDevice(id, btn) {
-    // Tìm Topic MQTT của widget này
     let targetTopic = "";
     for (const [t, ids] of Object.entries(topicMap)) {
         if (ids.includes(id)) { targetTopic = t; break; }
@@ -334,7 +337,6 @@ function toggleDevice(id, btn) {
 
     if (!targetTopic) return showToast("Lỗi: Chưa có Topic!", "error");
 
-    // Lấy trạng thái hiện tại dựa trên màu nút
     const isCurrentlyOn = (btn.style.color === "rgb(74, 222, 128)" || btn.style.color === "#4ade80");
     const msg = isCurrentlyOn ? "OFF" : "ON";
 
@@ -517,7 +519,7 @@ function showToast(message, type = 'success') {
 }
 
 // ============================================================
-// LOGIC MENU MOBILE (TOGGLE & AUTO CLOSE)
+// LOGIC MENU MOBILE
 // ============================================================
 
 function toggleMobileSidebar() {
@@ -525,24 +527,18 @@ function toggleMobileSidebar() {
     const overlay = document.querySelector('.sidebar-overlay');
     
     if (sidebar && overlay) {
-        // Thêm hoặc bỏ class 'show' để kích hoạt CSS transform
         sidebar.classList.toggle('show');
         overlay.classList.toggle('show');
     }
 }
 
-// Tự động đóng Sidebar khi bấm vào một mục menu
 document.addEventListener("DOMContentLoaded", function() {
-    // Tìm tất cả các thẻ li trong sidebar
     const menuItems = document.querySelectorAll('.sidebar ul li');
     
     menuItems.forEach(item => {
         item.addEventListener('click', () => {
-            // Chỉ đóng nếu đang ở giao diện mobile (màn hình nhỏ)
             if (window.innerWidth <= 768) {
-                // Gọi lại hàm toggle để đóng (remove class 'show')
                 const sidebar = document.querySelector('.sidebar');
-                // Kiểm tra nếu đang mở thì mới đóng
                 if (sidebar.classList.contains('show')) {
                     toggleMobileSidebar();
                 }
